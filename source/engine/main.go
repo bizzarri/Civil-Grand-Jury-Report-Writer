@@ -264,7 +264,7 @@ func (t *Template) export(d Draft) ([]byte, error) {
 	}
 	first := prefixBlocks[0].Start
 	out.WriteString(t.document[:first])
-	out.WriteString(para("Subtitle", d.Term+" "+d.County+" COUNTY GRAND JURY"))
+	out.WriteString(para("Subtitle", d.Term+" "+d.County+" County Grand Jury"))
 	out.WriteString(para("Subtitle", "PUBLIC RELEASE DATE: "+d.ReleaseDate))
 	out.WriteString(para("Title", d.Title))
 	findingIndex := map[string]int{}

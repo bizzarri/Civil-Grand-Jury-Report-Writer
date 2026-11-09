@@ -10,7 +10,7 @@ A local Windows application that guides an author through a civil grand jury rep
 
 Requirements: **64-bit Windows 10 or Windows 11, with .NET Framework 4.8 or later**. Users do not need Go or Python installed.
 
-Download the Windows build from the [Windows build workflow](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/actions/workflows/windows.yml). Open a successful run and download its `ReportInterview-Windows-x64` artifact. Extract it and run `ReportInterview-2.0.0-x64.msi`, then open **Report Interview** from the Start menu. GitHub may require sign-in to download workflow artifacts. The installer is unsigned.
+Download **v2.0.1-alpha.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.0.1-alpha.1). Run `ReportInterview-2.0.1-alpha.1-x64.msi`, then open **Report Interview** from the Start menu. This is an alpha release for testing and feedback; the installer is unsigned. Check package hashes against the attached `SHA256SUMS.txt`. See the [release notes](RELEASE_NOTES.md) for known limits and upgrade information.
 
 For maintainers, the same artifact contains a portable ZIP. Extract the entire ZIP and open `ReportInterview.exe`; keep its companion files together. Build instructions are below.
 
@@ -50,7 +50,7 @@ cd Civil-Grand-Jury-Report-Writer
 .\source\build.ps1 -PythonExecutable 'C:\Path\To\Python311\python.exe'
 ```
 
-Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.0-x64.msi` with a SHA-256 file. An ordinary Go toolchain and Python are sufficient; no extra Go, Python or NuGet packages are required.
+Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.1-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. An ordinary Go toolchain and Python are sufficient; no extra Go, Python or NuGet packages are required.
 
 ```powershell
 # Engine tests
@@ -67,7 +67,7 @@ if ($p.ExitCode -ne 0) { throw 'Native test failed; inspect work\native-test\FAI
 python .\source\verify_msi.py .\work\msi-test
 ```
 
-The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksum, portable ZIP and validation artifacts. It does not claim a completed install/repair/uninstall test on a physical Windows desktop.
+The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksums, portable ZIP and validation artifacts. Changing `VERSION` on `main` requests an alpha prerelease after all build checks pass; maintainers may also explicitly request publication with the workflow's `publish_alpha` input. The publishing job verifies downloaded artifact checksums and creates a tag at the exact tested commit. Existing release tags are never overwritten. Stable publication is not enabled. It does not claim a completed install/repair/uninstall/upgrade test on a clean Windows desktop.
 
 ## Structure and contributions
 

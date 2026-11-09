@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish_alpha:
+        description: Publish the current VERSION as an alpha prerelease after checks pass
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,8 +18,31 @@ jobs:
   build:
     runs-on: windows-latest
     timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      publish_alpha: ${{ steps.version.outputs.publish_alpha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Read release version and explicit publication request
+        id: version
+        shell: pwsh
+        env:
+          REQUEST_PUBLISH: ${{ inputs.publish_alpha }}
+        run: |
+          $version = (Get-Content -Raw VERSION).Trim()
+          "version=$version" >> $env:GITHUB_OUTPUT
+          $publish = $false
+          if ('${{ github.event_name }}' -eq 'push') {
+            $changed = @(git diff --name-only HEAD^ HEAD)
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot check release version change' }
+            $publish = $changed -contains 'VERSION'
+          } elseif ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $publish = $env:REQUEST_PUBLISH -eq 'true'
+          }
+          if ($publish -and $version -notmatch '^\d+\.\d+\.\d+-alpha\.\d+$') { throw 'Only alpha versions may be published by this workflow' }
+          "publish_alpha=$($publish.ToString().ToLower())" >> $env:GITHUB_OUTPUT
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.3'
@@ -45,7 +73,13 @@ jobs:
           Copy-Item (Join-Path $env:RUNNER_TEMP 'report-msi-qa/verification.json') test-results/
       - name: Package portable application
         shell: pwsh
-        run: Compress-Archive -Path app/* -DestinationPath dist/ReportInterview-2.0.0-portable-x64.zip
+        run: |
+          $version = (Get-Content -Raw VERSION).Trim()
+          Compress-Archive -Path app/* -DestinationPath "dist/ReportInterview-$version-portable-x64.zip"
+          $lines = Get-ChildItem dist -File | Where-Object { $_.Extension -in @('.msi', '.zip') } | Sort-Object Name | ForEach-Object {
+            (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower() + '  ' + $_.Name
+          }
+          $lines | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding ascii
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ReportInterview-Windows-x64
@@ -57,3 +91,36 @@ jobs:
           name: validation-results
           path: test-results/*
           if-no-files-found: error
+
+  publish-alpha:
+    needs: build
+    if: github.ref == 'refs/heads/main' && needs.build.outputs.publish_alpha == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_VERSION: ${{ needs.build.outputs.version }}
+      RELEASE_COMMIT: ${{ github.sha }}
+      RELEASE_RUN: ${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download and verify tested packages
+        run: |
+          gh run download "$RELEASE_RUN" --name ReportInterview-Windows-x64 --dir release-assets
+          cd release-assets
+          sha256sum -c SHA256SUMS.txt
+          test -f "ReportInterview-$RELEASE_VERSION-x64.msi"
+          test -f "ReportInterview-$RELEASE_VERSION-portable-x64.zip"
+      - name: Publish alpha prerelease
+        run: |
+          gh release create "v$RELEASE_VERSION" \
+            "release-assets/ReportInterview-$RELEASE_VERSION-x64.msi" \
+            "release-assets/ReportInterview-$RELEASE_VERSION-portable-x64.zip" \
+            release-assets/SHA256SUMS.txt \
+            --target "$RELEASE_COMMIT" \
+            --title "Civil Grand Jury Report Writer v$RELEASE_VERSION" \
+            --notes-file RELEASE_NOTES.md \
+            --prerelease --latest=false

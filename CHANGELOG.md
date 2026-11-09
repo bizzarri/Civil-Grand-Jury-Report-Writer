@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.1-alpha.1 — 2026-11-09
+
+First tagged public alpha release for testing and feedback.
+
+- Changed the report cover wording to **County Grand Jury**.
+- Added an alpha version label to the application and installer, with versions driven by `VERSION`.
+- Assigned the MSI a new product identity and retained the upgrade family for existing 2.0.0 installations.
+- Added checked release packages, portable ZIP and SHA-256 checksums to GitHub prereleases.
+- Publish only after engine, native-control and MSI verification checks pass, using the exact tested commit.
+
 ## 2.0.0 — 2026-11-09
 
 Initial public native Windows version.

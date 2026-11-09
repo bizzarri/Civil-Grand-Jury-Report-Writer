@@ -9,7 +9,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-MSI = ROOT / "dist" / "ReportInterview-2.0.0-x64.msi"
+VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+NUMERIC_VERSION = VERSION.split("-", 1)[0]
+MSI = ROOT / "dist" / ("ReportInterview-" + VERSION + "-x64.msi")
 OUT = Path(sys.argv[1]).resolve()
 OUT.mkdir(parents=True, exist_ok=True)
 db = msilib.OpenDatabase(str(MSI), msilib.MSIDBOPEN_READONLY)
@@ -33,7 +35,10 @@ assert all(r[1] in components for r in files)
 assert all(r[2] in directories for r in rows("Component"))
 assert all(r[0] in features and r[1] in components for r in rows("FeatureComponents"))
 assert properties.get("ALLUSERS", "") == ""
-assert properties["ProductVersion"] == "2.0.0"
+assert properties["ProductVersion"] == NUMERIC_VERSION
+assert properties["ProductCode"] != "{C43BE697-E8B0-46B7-8B29-78B3E2D3A216}"
+assert properties["UpgradeCode"] == "{AD5EFB3B-0D37-4D1F-BB63-93D00EDAB34F}"
+assert any(r[2] == NUMERIC_VERSION and (int(r[4]) & 512) for r in rows("Upgrade"))
 assert len(rows("Shortcut")) == 1
 for shortcut in rows("Shortcut"):
     assert shortcut[1] in directories and shortcut[3] in components

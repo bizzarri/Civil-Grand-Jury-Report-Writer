@@ -1,4 +1,6 @@
-REPORT INTERVIEW 2.0
+REPORT INTERVIEW 2.0.1 ALPHA 1
+
+Alpha release for testing and feedback. Back up drafts and check exported reports.
 
 Open Report Interview from the Windows Start menu after installation.
 

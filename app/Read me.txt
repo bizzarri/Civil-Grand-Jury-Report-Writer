@@ -1,0 +1,29 @@
+REPORT INTERVIEW 2.0
+
+Open Report Interview from the Windows Start menu after installation.
+
+This is a native Windows application. It uses no browser, web server, AI, telemetry or cloud services. Go and Python do not need to be installed. Microsoft .NET Framework 4.8 or later is required; setup checks for it.
+
+Start a new report or choose Open draft to resume one. Work is saved automatically after a brief pause and when changing sections. Ctrl+S saves explicitly. Review and export lists missing required information. Double-click a missing item to return to its section.
+
+IMPORT YOUR EXISTING REPORT
+Choose File > Import existing draft, then select the saved .json file from the browser version's data folder. Import creates a copy in the desktop app's draft folder and leaves the original file unchanged. It preserves your report text, evidence notes, findings, recommendations and links. A Word export is not a resumable draft; use its source JSON file.
+
+DRAFT STORAGE
+Drafts are stored at:
+%LOCALAPPDATA%\ReportInterview\Drafts
+
+Choose File > Open drafts folder to find and back them up. Draft files contain plaintext report text and evidence notes. Keep the folder and backups on approved storage. Uninstalling the application keeps drafts and exported reports.
+
+WORD EXPORT
+Export uses the exact revised accessible CGJA template from the first version. It preserves the source styles, independent automatic F/R numbering and other unchanged Word package parts. Recommendations have clickable links to findings. Original template instructions and unused placeholders are not published. Evidence notes remain in the saved draft.
+
+The app checks completeness and your verification flags, not factual truth or legal sufficiency. It never supplies missing report facts or calculates legal response requirements. Check manually entered F/R references after adding or removing findings and recommendations.
+
+This version supports narrative text. Add nested discussion headings, accessible tables, images and appendices in Word after export. Run Word's Accessibility Checker and complete review of the final public PDF. Template preservation is not accessibility certification. Visual Word pagination has not been independently verified in this build environment.
+
+INSTALLATION
+The MSI installs for your Windows account in:
+%LOCALAPPDATA%\Programs\ReportInterview
+
+It creates a Start menu shortcut and an entry in Windows Installed apps. Reopen the MSI to repair or remove the application, or uninstall it through Windows Settings. The installer is not digitally signed.

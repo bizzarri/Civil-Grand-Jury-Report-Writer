@@ -1,0 +1,31 @@
+# Author content and local working folders must never be published.
+**/data/
+**/Drafts/
+**/drafts/
+/work/
+/test-results/
+*.json
+*.bak
+*.tmp
+~$*
+
+# Word files are private by default; only the supplied public authoring template is tracked.
+*.docx
+!source/engine/template/revised.docx
+*.pdf
+
+# Generated applications and installers are build/release artifacts.
+/app/*
+!/app/Read me.txt
+/dist/
+*.exe
+*.msi
+*.cab
+*.zip
+*.pdb
+__pycache__/
+*.pyc
+.vs/
+.vscode/
+Thumbs.db
+.DS_Store

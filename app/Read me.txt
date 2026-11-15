@@ -1,4 +1,4 @@
-REPORT INTERVIEW 2.0.1 ALPHA 1
+REPORT INTERVIEW 2.0.2 ALPHA 1
 
 Alpha release for testing and feedback. Back up drafts and check exported reports.
 
@@ -6,7 +6,7 @@ Open Report Interview from the Windows Start menu after installation.
 
 This is a native Windows application. It uses no browser, web server, AI, telemetry or cloud services. Go and Python do not need to be installed. Microsoft .NET Framework 4.8 or later is required; setup checks for it.
 
-Start a new report or choose Open draft to resume one. Work is saved automatically after a brief pause and when changing sections. Ctrl+S saves explicitly. Review and export lists missing required information. Double-click a missing item to return to its section.
+Start a new report in the Report Logic Matrix, or choose Open draft to resume one. The top toolbar opens the matrix at any time. Work is saved automatically after a brief pause and when changing sections. Ctrl+S saves explicitly. Review and export lists missing required information. Double-click a missing item to return to its section.
 
 IMPORT YOUR EXISTING REPORT
 Choose File > Import existing draft, then select the saved .json file from the browser version's data folder. Import creates a copy in the desktop app's draft folder and leaves the original file unchanged. It preserves your report text, evidence notes, findings, recommendations and links. A Word export is not a resumable draft; use its source JSON file.

@@ -1,36 +1,18 @@
-# v2.0.1-alpha.1
+# v2.0.2-alpha.1
 
-First public alpha of Civil Grand Jury Report Writer, a native Windows application for guided report authoring. This prerelease is intended for testing and feedback.
+New reports start in the Report Logic Matrix. Use the **Report Logic Matrix** button in the top toolbar to open it from any report section.
 
-## Downloads
+- Record facts and their sources, link them to findings, and link findings to recommendations. The review tab displays each finding and the evidence and recommendations connected to it.
+- Choose **Open report** anytime. The matrix and the report use the same findings and recommendations. Existing drafts resume at their last report section.
+- Select verified fact statements to append to Discussion. Source notes stay in the matrix. Editing a supporting fact or its sources flags linked findings for author review.
+- Export a working Word copy with **File → Export confidential draft**. This option is available for incomplete reports and adds a faint **CONFIDENTIAL DRAFT** watermark. The standard report export omits the watermark and the matrix.
 
-- **MSI:** install for the current Windows user and launch Report Interview from the Start menu.
-- **Portable ZIP:** extract the entire archive and run `ReportInterview.exe`; keep all companion files together.
-- **SHA256SUMS.txt:** SHA-256 checksums for both packages.
+## Install
 
-Requires x64 Windows 10/11 and .NET Framework 4.8 or later. No separate Go or Python installation is needed. The binaries and installer are unsigned.
+Run the x64 MSI, then open **Report Interview** from the Start menu. For the portable version, extract the ZIP and run `ReportInterview.exe` from the extracted folder. Windows 10 or 11 and .NET Framework 4.8 or later are required. The packages are unsigned. `SHA256SUMS.txt` contains both package checksums.
 
-## Included
+Back up `%LOCALAPPDATA%\ReportInterview\Drafts` before upgrading. If you also test with an earlier app, use a copy of the draft. Saving with an older version can discard matrix data. The app runs locally without AI, telemetry, or cloud processing.
 
-- Guided entry using the revised accessible CGJA report template.
-- Missing-required-section checks, autosave, resumable drafts and import of browser-version JSON drafts.
-- Structured findings, evidence references, author verification and linked recommendations.
-- Word export preserving template styles and separate automatic F/R numbering, with clickable finding links.
-- Updated cover wording: **County Grand Jury**.
-- Native Windows interface and local Go engine. No browser, web server, AI, telemetry or cloud processing.
+## Review before publication
 
-## Upgrading
-
-Back up your draft folder before testing a new build. The MSI has a new product identity and is configured to upgrade the earlier 2.0.0 installation. Drafts remain at `%LOCALAPPDATA%\ReportInterview\Drafts` and are not removed by the installer. Browser-version drafts can be imported using **File → Import existing draft**. There is no automatic application updater.
-
-## Known limits
-
-- This is alpha software. Save backups and check your exports.
-- General sections support narrative text. Add nested headings, accessible tables, images and attachments in Word after export.
-- Response recipients, deadlines and manually entered F/R references require author review.
-- Completeness checks and verification flags do not establish factual truth or legal sufficiency. The application never supplies missing report facts.
-- Word pagination, screen-reader behavior and the exact final public PDF still require review. Template preservation is not accessibility certification.
-- The source Word template retains an inherited external attached-template reference. Whether this produces a prompt in Word has not been reproduced; report any such message with its exact wording and the action that triggered it.
-- Automated engine/native-control tests and MSI database/payload checks are required before publication. A full install/repair/uninstall/upgrade cycle has not been automated or independently verified on a clean Windows machine. The earlier 2.0.0 build was installed, removed and reinstalled successfully by the initial tester.
-
-Please report problems through repository issues using synthetic examples. Do not attach confidential report drafts, interview identities or private evidence.
+The two-verified-facts check is a review warning. The author decides which information belongs in the report. Check the Word layout and watermark appearance in your reader. The separate reviewer PDF remains a follow-up. Please use synthetic examples when reporting issues.

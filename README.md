@@ -10,7 +10,7 @@ A local Windows application that guides an author through a civil grand jury rep
 
 Requirements: **64-bit Windows 10 or Windows 11, with .NET Framework 4.8 or later**. Users do not need Go or Python installed.
 
-Download **v2.0.1-alpha.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.0.1-alpha.1). Run `ReportInterview-2.0.1-alpha.1-x64.msi`, then open **Report Interview** from the Start menu. This is an alpha release for testing and feedback; the installer is unsigned. Check package hashes against the attached `SHA256SUMS.txt`. See the [release notes](RELEASE_NOTES.md) for known limits and upgrade information.
+Download **v2.0.2-alpha.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.0.2-alpha.1). Run `ReportInterview-2.0.2-alpha.1-x64.msi`, then open **Report Interview** from the Start menu. This is an alpha release for testing and feedback; the installer is unsigned. Check package hashes against the attached `SHA256SUMS.txt`. See the [release notes](RELEASE_NOTES.md) for known limits and upgrade information.
 
 For maintainers, the same artifact contains a portable ZIP. Extract the entire ZIP and open `ReportInterview.exe`; keep its companion files together. Build instructions are below.
 
@@ -18,13 +18,15 @@ The MSI installs for the current account, creates a Start menu shortcut and an e
 
 ## Write a report
 
-1. Choose **New report** and enter approved title, county, jury term and release date.
+1. Choose **Report Logic Matrix** or **New report** to start with facts and sources. Link facts to findings and findings to recommendations in the matrix. When ready, select **Open report** and enter the report details.
 2. Follow the sections in the left navigation. Each section includes its original template guidance. Optional empty sections are omitted from export.
 3. Enter findings with evidence references, then explicitly verify them. Editing a finding or its evidence resets its verification checkbox. Evidence notes stay in the draft and are not published.
 4. Enter recommendations with responsible entities, actions and timing; link them to supporting findings. A finding cannot be removed while recommendations reference it.
 5. Open **Review and export**. Missing required entries are listed; double-click one to return to its section. Export becomes available when the required information is complete.
 
 Work autosaves after a short pause and before section changes. Ctrl+S saves explicitly; Ctrl+O opens a saved draft; Ctrl+N starts a report; Ctrl+E exports Word. Revision checks protect against silently overwriting a draft changed on disk.
+
+Use **Report Logic Matrix** in the top toolbar to return at any time. You can append selected verified fact statements to Discussion. Source references remain in the matrix. Changes to supporting facts flag their findings for review. Use **File → Export confidential draft** to mark a working Word copy, including a report still in progress.
 
 ## Continue a draft from the browser version
 
@@ -50,7 +52,7 @@ cd Civil-Grand-Jury-Report-Writer
 .\source\build.ps1 -PythonExecutable 'C:\Path\To\Python311\python.exe'
 ```
 
-Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.1-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. An ordinary Go toolchain and Python are sufficient; no extra Go, Python or NuGet packages are required.
+Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.2-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. An ordinary Go toolchain and Python are sufficient; no extra Go, Python or NuGet packages are required.
 
 ```powershell
 # Engine tests

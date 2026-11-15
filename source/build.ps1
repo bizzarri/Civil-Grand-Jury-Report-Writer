@@ -19,7 +19,7 @@ $manifest = (Get-Content -Raw -LiteralPath "$PSScriptRoot\app.manifest").Replace
 $manifestPath = Join-Path $generatedDir 'app.manifest'
 $manifest | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
-& $compiler /nologo /target:winexe /platform:x64 /optimize+ "/out:$appDir\ReportInterview.exe" "/win32manifest:$manifestPath" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "$PSScriptRoot\Desktop.cs" $versionSource
+& $compiler /nologo /target:winexe /platform:x64 /optimize+ "/out:$appDir\ReportInterview.exe" "/win32manifest:$manifestPath" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "$PSScriptRoot\Desktop.cs" "$PSScriptRoot\LogicMatrix.cs" $versionSource
 if ($LASTEXITCODE -ne 0) { throw 'Native interface compilation failed' }
 Copy-Item -LiteralPath "$PSScriptRoot\ReportInterview.exe.config" -Destination $appDir
 Copy-Item -LiteralPath "$desktopRoot\LICENSE" -Destination "$appDir\LICENSE.txt"

@@ -45,9 +45,17 @@ type Template struct {
 	prefix, suffix string
 }
 type Finding struct {
+	ID               string   `json:"id"`
+	Text             string   `json:"text"`
+	Evidence         string   `json:"evidence"`
+	Verified         bool     `json:"verified"`
+	FactIDs          []string `json:"factIds,omitempty"`
+	NoRecommendation bool     `json:"noRecommendation,omitempty"`
+}
+type Fact struct {
 	ID       string `json:"id"`
 	Text     string `json:"text"`
-	Evidence string `json:"evidence"`
+	Sources  string `json:"sources"`
 	Verified bool   `json:"verified"`
 }
 type Recommendation struct {
@@ -69,6 +77,7 @@ type Draft struct {
 	Current         int               `json:"current"`
 	Answers         map[string]string `json:"answers"`
 	Findings        []Finding         `json:"findings"`
+	Facts           []Fact            `json:"facts,omitempty"`
 	Recommendations []Recommendation  `json:"recommendations"`
 }
 type Server struct {
@@ -253,8 +262,16 @@ func paragraphs(style, text string) string {
 	return s.String()
 }
 func (t *Template) export(d Draft) ([]byte, error) {
-	if e := validate(d, t); e != nil {
-		return nil, e
+	return t.exportReport(d, false)
+}
+
+func (t *Template) exportReport(d Draft, confidential bool) ([]byte, error) {
+	if confidential {
+		if d.TemplateHash != t.Hash {
+			return nil, errors.New("draft uses a different report template")
+		}
+	} else if err := validate(d, t); err != nil {
+		return nil, err
 	}
 	var out strings.Builder
 	// Retain the original XML declaration, namespaces and body opening; replace cover slots.
@@ -282,7 +299,7 @@ func (t *Template) export(d Draft) ([]byte, error) {
 			for i, f := range d.Findings {
 				p := para("Finding", f.Text)
 				at := strings.Index(p, "<w:r>")
-				p = p[:at] + fmt.Sprintf(`<w:bookmarkStart w:id="%d" w:name="Finding_%s"/>`, 1000+i, f.ID) + p[at:]
+				p = p[:at] + fmt.Sprintf(`<w:bookmarkStart w:id="%d" w:name="Finding_%s"/>`, 1000+i, esc(f.ID)) + p[at:]
 				p = strings.Replace(p, "</w:p>", fmt.Sprintf(`<w:bookmarkEnd w:id="%d"/></w:p>`, 1000+i), 1)
 				out.WriteString(p)
 			}
@@ -291,11 +308,17 @@ func (t *Template) export(d Draft) ([]byte, error) {
 			for _, r := range d.Recommendations {
 				out.WriteString(para("Recommendation", r.Owner+": "+r.Action+" By: "+r.Due+"."))
 				out.WriteString(`<w:p><w:r><w:t xml:space="preserve">Related findings: </w:t></w:r>`)
-				for j, id := range r.FindingIDs {
+				j := 0
+				for _, id := range r.FindingIDs {
+					number, found := findingIndex[id]
+					if !found {
+						continue
+					}
 					if j > 0 {
 						out.WriteString(`<w:r><w:t xml:space="preserve">, </w:t></w:r>`)
 					}
-					out.WriteString(`<w:hyperlink w:anchor="Finding_` + id + `" w:history="1"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>` + fmt.Sprintf("F%d", findingIndex[id]) + `</w:t></w:r></w:hyperlink>`)
+					out.WriteString(fmt.Sprintf(`<w:hyperlink w:anchor="Finding_%s" w:history="1"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>F%d</w:t></w:r></w:hyperlink>`, esc(id), number))
+					j++
 				}
 				out.WriteString(`</w:p>`)
 			}
@@ -329,6 +352,9 @@ func (t *Template) export(d Draft) ([]byte, error) {
 		}
 		if f.Name == "word/document.xml" {
 			b = []byte(out.String())
+		}
+		if confidential && f.Name == "word/footer1.xml" {
+			b = bytes.Replace(b, []byte("</w:p>"), []byte(confidentialWatermark+"</w:p>"), 1)
 		}
 		if f.Name == "docProps/core.xml" {
 			re := regexp.MustCompile(`(?s)<dc:title(?:\s[^>]*)?>.*?</dc:title>|<dc:title\s*/>`)
@@ -369,7 +395,15 @@ func validate(d Draft, t *Template) error {
 			return errors.New("invalid or duplicate finding ID")
 		}
 		seen[f.ID] = true
-		if strings.TrimSpace(f.Text) == "" || strings.TrimSpace(f.Evidence) == "" || !f.Verified {
+		hasEvidence := strings.TrimSpace(f.Evidence) != ""
+		for _, fact := range d.Facts {
+			for _, id := range f.FactIDs {
+				if id == fact.ID && fact.Verified && strings.TrimSpace(fact.Text) != "" && strings.TrimSpace(fact.Sources) != "" {
+					hasEvidence = true
+				}
+			}
+		}
+		if strings.TrimSpace(f.Text) == "" || !hasEvidence || !f.Verified {
 			return errors.New("each finding needs text, an evidence reference and author verification")
 		}
 	}

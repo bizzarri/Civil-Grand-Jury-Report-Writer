@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.2-alpha.1 — 2026-11-15
+
+- Start new reports in the Report Logic Matrix and open it anytime from the top toolbar.
+- Record facts and sources, link facts to findings, and review each finding alongside its recommendations.
+- Append selected verified fact statements to Discussion. Changes to supporting facts flag linked findings for review.
+- Export incomplete or complete working copies with a confidential draft watermark.
+
 ## 2.0.1-alpha.1 — 2026-11-09
 
 First tagged public alpha release for testing and feedback.

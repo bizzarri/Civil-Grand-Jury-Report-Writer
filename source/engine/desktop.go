@@ -117,12 +117,12 @@ func (s *Server) execute(q Request) (Result, error) {
 			return result, e
 		}
 		result.Draft = &d
-	case "export":
+	case "export", "export-draft":
 		d, e := s.read(q.ID)
 		if e != nil {
 			return result, e
 		}
-		b, e := s.template.export(d)
+		b, e := s.template.exportReport(d, q.Op == "export-draft")
 		if e != nil {
 			return result, e
 		}

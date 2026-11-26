@@ -64,7 +64,7 @@ cd Civil-Grand-Jury-Report-Writer
 .\source\build.ps1 -PythonExecutable 'C:\Path\To\Python311\python.exe'
 ```
 
-Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-<version>-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. The build installs the pinned PDF helper dependencies from `source/pdf-build-requirements.txt`. No NuGet packages are required.
+Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-<version>-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. The build uses the pinned `go-winres` tool to stamp the engine executable and installs the pinned PDF helper dependencies from `source/pdf-build-requirements.txt`. No NuGet packages are required.
 
 ```powershell
 # Engine tests
@@ -82,6 +82,10 @@ python .\source\verify_msi.py .\work\msi-test
 ```
 
 The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksums, portable ZIP and validation artifacts. Changing `VERSION` to an alpha version on `main` requests an alpha prerelease after all build checks pass. Maintainers can also run the workflow explicitly with `publish_alpha` or `publish_beta`. Beta publication requires a matching GitHub draft release. The publishing job verifies package checksums and tags the exact tested commit. Existing release tags are never overwritten. Stable publication is not enabled. It does not claim a completed install/repair/uninstall/upgrade test on a clean Windows desktop.
+
+## Code signing policy
+
+See the [code signing policy](CODE_SIGNING.md) for release approvals, privacy, and the SignPath application status.
 
 ## Structure and contributions
 

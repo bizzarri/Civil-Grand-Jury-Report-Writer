@@ -55,12 +55,13 @@ add("Registry", [("InstallMarker", 1, r"Software\ReportInterview\Desktop", "Vers
 add("CreateFolder", [("INSTALLDIR", "App"), ("MenuDir", "App")])
 add("RemoveFile", [("RemoveMenuDir", "App", None, "MenuDir", 2)])
 cab = msilib.CAB("ReportFiles")
-names = ["ReportInterview.exe", "ReportEngine.exe", "ReportInterview.exe.config", "Read me.txt", "LICENSE.txt", "NOTICE.txt"]
+names = ["ReportInterview.exe", "ReportEngine.exe", "ReportInterview.exe.config", "Read me.txt", "LICENSE.txt", "NOTICE.txt",
+         "ReportPdf.exe", "PDF-Third-Party-Notices.txt"]
 for index, name in enumerate(names, 1):
     full = APP / name
     key = "File" + str(index)
     seq, _ = cab.append(str(full), name, key)
-    short = {1: "REPORT~1.EXE", 2: "ENGINE.EXE", 3: "REPORT~1.CON", 4: "README.TXT", 5: "LICENSE.TXT", 6: "NOTICE.TXT"}[index]
+    short = {1: "REPORT~1.EXE", 2: "ENGINE.EXE", 3: "REPORT~1.CON", 4: "README.TXT", 5: "LICENSE.TXT", 6: "NOTICE.TXT", 7: "REPORT~2.EXE", 8: "PDFTHIRD.TXT"}[index]
     version = NUMERIC_VERSION + ".0" if index == 1 else None
     add("File", [(key, "App", short + "|" + name, full.stat().st_size, version, "1033" if version else None, 512, seq)])
     if not version:

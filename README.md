@@ -42,9 +42,19 @@ This version supports **narrative text and structured findings/recommendations**
 
 Run Word’s Accessibility Checker and arrange review of the exact final public PDF with the responsible court. Preserving source features does not establish accessibility conformance. See [template provenance](NOTICE.md) and [validation limits](docs/VALIDATION.md).
 
+### Prepare the finished PDF for review
+
+1. Finish editing the exported report in desktop Word, run Word’s Accessibility Checker, then save and close the finished `.docx`.
+2. In Report Interview, choose **File → Prepare PDF for review**, select that Word file, and choose where to save the PDF.
+3. Have the designated reviewer open the saved PDF for the reading-order, table, link and other manual checks before publication.
+
+The app uses desktop Word to export a tagged PDF, fills missing link descriptions where it can identify the link, sets the PDF/UA-1 identifier, and runs veraPDF’s automated PDF/UA-1 checks. The files are processed on the PC. If the checks fail, the app explains what needs review and preserves any existing PDF.
+
+For one-time setup, the reviewer needs desktop Microsoft Word, Java, and the **CLI** component of the [stable veraPDF installer](https://software.verapdf.org/). If the application cannot locate veraPDF, select the `cli-*.jar` file from its installation’s `bin` folder. Report Interview remembers the selection for that Windows user. The Word authoring and export features work independently of these PDF review prerequisites.
+
 ## Build from source
 
-Build dependencies: Go 1.22 or later, the Windows .NET Framework C# compiler, and **Python 3.11** with standard `msilib`. Python is used only to package and verify the MSI; it is not part of the installed application. Python 3.13+ removed `msilib` and cannot run these packaging scripts.
+Build dependencies: Go 1.22 or later, the Windows .NET Framework C# compiler, and **Python 3.11** with standard `msilib`. The build freezes the PDF helper and packages it with the app. A separate Python installation is unnecessary on the review PC. Python 3.13+ removed `msilib` and cannot run these packaging scripts.
 
 ```powershell
 git clone https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer.git
@@ -52,7 +62,7 @@ cd Civil-Grand-Jury-Report-Writer
 .\source\build.ps1 -PythonExecutable 'C:\Path\To\Python311\python.exe'
 ```
 
-Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.2-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. An ordinary Go toolchain and Python are sufficient; no extra Go, Python or NuGet packages are required.
+Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.2-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. The build installs the pinned PDF helper dependencies from `source/pdf-build-requirements.txt`. No NuGet packages are required.
 
 ```powershell
 # Engine tests

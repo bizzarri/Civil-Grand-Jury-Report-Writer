@@ -30,7 +30,8 @@ components = {r[0] for r in rows("Component")}
 directories = {r[0] for r in rows("Directory")}
 features = {r[0] for r in rows("Feature")}
 properties = dict(rows("Property"))
-assert len(files) == 6 and len({r[0] for r in files}) == 6
+assert len(files) == 8 and len({r[0] for r in files}) == 8
+assert {"ReportPdf.exe", "PDF-Third-Party-Notices.txt"} <= {r[2].split("|")[-1] for r in files}
 assert all(r[1] in components for r in files)
 assert all(r[2] in directories for r in rows("Component"))
 assert all(r[0] in features and r[1] in components for r in rows("FeatureComponents"))

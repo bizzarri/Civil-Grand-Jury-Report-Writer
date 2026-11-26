@@ -23,6 +23,7 @@
 *.cab
 *.zip
 *.pdb
+/source/engine/report_version_windows_amd64.syso
 __pycache__/
 *.pyc
 .vs/

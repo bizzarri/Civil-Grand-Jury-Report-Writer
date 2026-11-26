@@ -10,6 +10,6 @@ PDF preparation runs on the PC and requires desktop Microsoft Word. The reviewer
 
 ## Test on Windows
 
-Use the portable x64 ZIP in a fresh folder and launch `ReportInterview.exe`. The x64 MSI is also available. Windows 10 or 11 and .NET Framework 4.8 or later are required. The packages are unsigned. Compare the download with `SHA256SUMS.txt`.
+Use the portable x64 ZIP in a fresh folder and launch `ReportInterview.exe`. The x64 MSI is also available. Windows 10 or 11 and .NET Framework 4.8 or later are required. The packages are unsigned. Compare the download with `SHA256SUMS.txt`. See the [Code signing policy](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/blob/main/CODE_SIGNING.md).
 
 Use a dummy report with an internal recommendation-to-finding link. Verify that **Title** passes in Acrobat, that the link opens the intended finding, and that accessibility and Preflight checks run on the saved review copy. Use synthetic data when reporting issues.

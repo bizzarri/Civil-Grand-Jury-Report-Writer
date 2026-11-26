@@ -10,6 +10,10 @@ on:
         description: Publish the current VERSION as an alpha prerelease after checks pass
         type: boolean
         default: false
+      publish_beta:
+        description: Publish the matching beta draft from main after checks pass
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -20,7 +24,7 @@ jobs:
     timeout-minutes: 20
     outputs:
       version: ${{ steps.version.outputs.version }}
-      publish_alpha: ${{ steps.version.outputs.publish_alpha }}
+      publish_kind: ${{ steps.version.outputs.publish_kind }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,20 +33,31 @@ jobs:
         id: version
         shell: pwsh
         env:
-          REQUEST_PUBLISH: ${{ inputs.publish_alpha }}
+          REQUEST_ALPHA: ${{ inputs.publish_alpha }}
+          REQUEST_BETA: ${{ inputs.publish_beta }}
         run: |
           $version = (Get-Content -Raw VERSION).Trim()
           "version=$version" >> $env:GITHUB_OUTPUT
-          $publish = $false
+          $kind = ''
+          $isAlpha = $version -match '^\d+\.\d+\.\d+-alpha\.\d+$'
+          $isBeta = $version -match '^\d+\.\d+\.\d+-beta\.\d+$'
           if ('${{ github.event_name }}' -eq 'push') {
             $changed = @(git diff --name-only HEAD^ HEAD)
             if ($LASTEXITCODE -ne 0) { throw 'Cannot check release version change' }
-            $publish = $changed -contains 'VERSION'
+            if ($isAlpha -and ($changed -contains 'VERSION')) { $kind = 'alpha' }
           } elseif ('${{ github.event_name }}' -eq 'workflow_dispatch') {
-            $publish = $env:REQUEST_PUBLISH -eq 'true'
+            if ($env:REQUEST_ALPHA -eq 'true' -and $env:REQUEST_BETA -eq 'true') { throw 'Choose one release kind' }
+            if ($env:REQUEST_ALPHA -eq 'true') {
+              if (-not $isAlpha) { throw 'VERSION must be an alpha version' }
+              $kind = 'alpha'
+            }
+            if ($env:REQUEST_BETA -eq 'true') {
+              if (-not $isBeta) { throw 'VERSION must be a beta version' }
+              $kind = 'beta'
+            }
+            if ($kind -and $env:GITHUB_REF -ne 'refs/heads/main') { throw 'Publish from main' }
           }
-          if ($publish -and $version -notmatch '^\d+\.\d+\.\d+-alpha\.\d+$') { throw 'Only alpha versions may be published by this workflow' }
-          "publish_alpha=$($publish.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          "publish_kind=$kind" >> $env:GITHUB_OUTPUT
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.3'
@@ -92,9 +107,9 @@ jobs:
           path: test-results/*
           if-no-files-found: error
 
-  publish-alpha:
+  publish-release:
     needs: build
-    if: github.ref == 'refs/heads/main' && needs.build.outputs.publish_alpha == 'true'
+    if: github.ref == 'refs/heads/main' && needs.build.outputs.publish_kind != ''
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -103,6 +118,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RELEASE_VERSION: ${{ needs.build.outputs.version }}
+      RELEASE_KIND: ${{ needs.build.outputs.publish_kind }}
       RELEASE_COMMIT: ${{ github.sha }}
       RELEASE_RUN: ${{ github.run_id }}
     steps:
@@ -114,13 +130,21 @@ jobs:
           sha256sum -c SHA256SUMS.txt
           test -f "ReportInterview-$RELEASE_VERSION-x64.msi"
           test -f "ReportInterview-$RELEASE_VERSION-portable-x64.zip"
-      - name: Publish alpha prerelease
+      - name: Publish prerelease
         run: |
-          gh release create "v$RELEASE_VERSION" \
-            "release-assets/ReportInterview-$RELEASE_VERSION-x64.msi" \
-            "release-assets/ReportInterview-$RELEASE_VERSION-portable-x64.zip" \
-            release-assets/SHA256SUMS.txt \
-            --target "$RELEASE_COMMIT" \
-            --title "Civil Grand Jury Report Writer v$RELEASE_VERSION" \
-            --notes-file RELEASE_NOTES.md \
-            --prerelease --latest=false
+          tag="v$RELEASE_VERSION"
+          assets=(
+            "release-assets/ReportInterview-$RELEASE_VERSION-x64.msi"
+            "release-assets/ReportInterview-$RELEASE_VERSION-portable-x64.zip"
+            "release-assets/SHA256SUMS.txt"
+          )
+          if [[ "$RELEASE_KIND" == beta ]]; then
+            test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true
+            gh release upload "$tag" "${assets[@]}"
+            gh release edit "$tag" --target "$RELEASE_COMMIT" --notes-file RELEASE_NOTES.md \
+              --prerelease --latest=false --draft=false
+          else
+            gh release create "$tag" "${assets[@]}" --target "$RELEASE_COMMIT" \
+              --title "Civil Grand Jury Report Writer $tag" --notes-file RELEASE_NOTES.md \
+              --prerelease --latest=false
+          fi

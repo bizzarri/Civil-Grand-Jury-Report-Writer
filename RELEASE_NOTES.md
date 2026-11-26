@@ -1,6 +1,6 @@
 # v2.1.0-beta.1
 
-This beta is for final testing with synthetic reports.
+This is the first beta of the Windows Report Writer. It adds a local PDF preparation workflow for review in Acrobat Pro.
 
 - In **File → Prepare PDF for review**, select the finished Word report and choose where to save the review copy. Report Interview uses desktop Word to create a tagged PDF with heading bookmarks.
 - The PDF uses the report's document title, displays it in Acrobat, and includes the PDF/UA-1 identifier. The app fills in missing link descriptions where it can identify the link and lists any pages that need attention.

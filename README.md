@@ -10,9 +10,12 @@ A local Windows application that guides an author through a civil grand jury rep
 
 Requirements: **64-bit Windows 10 or Windows 11, with .NET Framework 4.8 or later**. Users do not need Go or Python installed.
 
-Download **v2.0.2-alpha.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.0.2-alpha.1). Run `ReportInterview-2.0.2-alpha.1-x64.msi`, then open **Report Interview** from the Start menu. This is an alpha release for testing and feedback; the installer is unsigned. Check package hashes against the attached `SHA256SUMS.txt`. See the [release notes](RELEASE_NOTES.md) for known limits and upgrade information.
+Download **v2.1.0-beta.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.1.0-beta.1). The beta packages are unsigned. Compare their SHA-256 hashes with `SHA256SUMS.txt`.
 
-For maintainers, the same artifact contains a portable ZIP. Extract the entire ZIP and open `ReportInterview.exe`; keep its companion files together. Build instructions are below.
+- **Installer:** Run `ReportInterview-2.1.0-beta.1-x64.msi`, then open **Report Interview** from the Start menu.
+- **Portable:** Extract `ReportInterview-2.1.0-beta.1-portable-x64.zip` to its own folder and run `ReportInterview.exe`. Keep the companion files together.
+
+See the [release notes](RELEASE_NOTES.md) for the tested PDF review workflow.
 
 The MSI installs for the current account, creates a Start menu shortcut and an entry in Windows Installed apps, and provides repair/removal when reopened. Uninstalling retains drafts and exported reports. Application files are installed at `%LOCALAPPDATA%\Programs\ReportInterview`; drafts are stored separately.
 
@@ -49,7 +52,7 @@ Run Word’s Accessibility Checker and arrange review of the exact final public 
 3. Open the saved PDF in **Acrobat Pro**. Run **Check for accessibility** and complete the manual checks. Then run **Print Production → Preflight → Verify compliance with PDF/UA-1 (syntax checks only)** in the **PDF Standards** library.
 4. Fix any issues and recheck the saved PDF. For issues in the report itself, correct the Word file and prepare a fresh PDF.
 
-The app uses desktop Microsoft Word to export a tagged PDF, adds the PDF/UA-1 identifier and fills missing link descriptions where it can identify the link. When a link needs a description, the app lists the affected PDF pages for the reviewer. Everything runs on the PC. The Acrobat checks and manual review establish whether the prepared PDF is ready for publication.
+The app uses desktop Microsoft Word to export a tagged PDF with heading bookmarks, carries over the document title, sets it to display in Acrobat, adds the PDF/UA-1 identifier, and fills missing link descriptions where it can identify the link. When a link needs a description, the app lists the affected PDF pages for the reviewer. Preparation runs on the PC and requires desktop Word. The reviewer uses Acrobat Pro. This workflow requires neither Java nor veraPDF.
 
 ## Build from source
 
@@ -78,7 +81,7 @@ if ($p.ExitCode -ne 0) { throw 'Native test failed; inspect work\native-test\FAI
 python .\source\verify_msi.py .\work\msi-test
 ```
 
-The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksums, portable ZIP and validation artifacts. Changing `VERSION` on `main` requests an alpha prerelease after all build checks pass; maintainers may also explicitly request publication with the workflow's `publish_alpha` input. The publishing job verifies downloaded artifact checksums and creates a tag at the exact tested commit. Existing release tags are never overwritten. Stable publication is not enabled. It does not claim a completed install/repair/uninstall/upgrade test on a clean Windows desktop.
+The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksums, portable ZIP and validation artifacts. Changing `VERSION` to an alpha version on `main` requests an alpha prerelease after all build checks pass. Maintainers can also run the workflow explicitly with `publish_alpha` or `publish_beta`. Beta publication requires a matching GitHub draft release. The publishing job verifies package checksums and tags the exact tested commit. Existing release tags are never overwritten. Stable publication is not enabled. It does not claim a completed install/repair/uninstall/upgrade test on a clean Windows desktop.
 
 ## Structure and contributions
 

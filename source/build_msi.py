@@ -35,7 +35,7 @@ si.SetProperty(msilib.PID_PAGECOUNT, 200)
 si.Persist()
 add("Property", [
     ("UpgradeCode", UPGRADE), ("INSTALLLEVEL", "1"), ("DefaultUIFont", "Normal"),
-    ("ARPCOMMENTS", "Alpha release for testing. Guided local report authoring. No AI or cloud processing."),
+    ("ARPCOMMENTS", "Release for testing. Guided local report authoring. No AI or cloud processing."),
     ("ARPNOMODIFY", "1"), ("ARPINSTALLLOCATION", "[INSTALLDIR]"),
     ("SecureCustomProperties", "OLDERPRODUCTS;NEWERPRODUCTS;NETRELEASE;WINDOWSBUILD"),
 ])
@@ -55,12 +55,13 @@ add("Registry", [("InstallMarker", 1, r"Software\ReportInterview\Desktop", "Vers
 add("CreateFolder", [("INSTALLDIR", "App"), ("MenuDir", "App")])
 add("RemoveFile", [("RemoveMenuDir", "App", None, "MenuDir", 2)])
 cab = msilib.CAB("ReportFiles")
-names = ["ReportInterview.exe", "ReportEngine.exe", "ReportInterview.exe.config", "Read me.txt", "LICENSE.txt", "NOTICE.txt"]
+names = ["ReportInterview.exe", "ReportEngine.exe", "ReportInterview.exe.config", "Read me.txt", "LICENSE.txt", "NOTICE.txt",
+         "ReportPdf.exe", "PDF-Third-Party-Notices.txt"]
 for index, name in enumerate(names, 1):
     full = APP / name
     key = "File" + str(index)
     seq, _ = cab.append(str(full), name, key)
-    short = {1: "REPORT~1.EXE", 2: "ENGINE.EXE", 3: "REPORT~1.CON", 4: "README.TXT", 5: "LICENSE.TXT", 6: "NOTICE.TXT"}[index]
+    short = {1: "REPORT~1.EXE", 2: "ENGINE.EXE", 3: "REPORT~1.CON", 4: "README.TXT", 5: "LICENSE.TXT", 6: "NOTICE.TXT", 7: "REPORT~2.EXE", 8: "PDFTHIRD.TXT"}[index]
     version = NUMERIC_VERSION + ".0" if index == 1 else None
     add("File", [(key, "App", short + "|" + name, full.stat().st_size, version, "1033" if version else None, 512, seq)])
     if not version:
@@ -114,7 +115,7 @@ def dialog(name, title, first, default, cancel):
 dialog("WelcomeDlg", "Install Report Interview", "Install", "Install", "Cancel")
 text("WelcomeDlg", "Title", 20, 18, 340, 35, "{\\Heading}Report Interview " + VERSION)
 text("WelcomeDlg", "Body", 20, 65, 340, 128,
-     "ALPHA RELEASE FOR TESTING. Install the native Windows report authoring application for your account.\r\n\r\n"
+     "RELEASE FOR TESTING. Install the native Windows report authoring application for your account.\r\n\r\n"
      "No browser, web server, Python installation, AI or cloud connection is required.\r\n\r\n"
      "Your existing drafts are not modified. After installation, use File > Import existing draft to bring in a browser-version draft.")
 button("WelcomeDlg", "Install", 180, "&Install", "Cancel")

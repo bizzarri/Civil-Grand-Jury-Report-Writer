@@ -10,9 +10,12 @@ A local Windows application that guides an author through a civil grand jury rep
 
 Requirements: **64-bit Windows 10 or Windows 11, with .NET Framework 4.8 or later**. Users do not need Go or Python installed.
 
-Download **v2.0.2-alpha.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.0.2-alpha.1). Run `ReportInterview-2.0.2-alpha.1-x64.msi`, then open **Report Interview** from the Start menu. This is an alpha release for testing and feedback; the installer is unsigned. Check package hashes against the attached `SHA256SUMS.txt`. See the [release notes](RELEASE_NOTES.md) for known limits and upgrade information.
+Download **v2.1.0-beta.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.1.0-beta.1). The beta packages are unsigned. Compare their SHA-256 hashes with `SHA256SUMS.txt`.
 
-For maintainers, the same artifact contains a portable ZIP. Extract the entire ZIP and open `ReportInterview.exe`; keep its companion files together. Build instructions are below.
+- **Installer:** Run `ReportInterview-2.1.0-beta.1-x64.msi`, then open **Report Interview** from the Start menu.
+- **Portable:** Extract `ReportInterview-2.1.0-beta.1-portable-x64.zip` to its own folder and run `ReportInterview.exe`. Keep the companion files together.
+
+See the [release notes](RELEASE_NOTES.md) for the tested PDF review workflow.
 
 The MSI installs for the current account, creates a Start menu shortcut and an entry in Windows Installed apps, and provides repair/removal when reopened. Uninstalling retains drafts and exported reports. Application files are installed at `%LOCALAPPDATA%\Programs\ReportInterview`; drafts are stored separately.
 
@@ -42,9 +45,18 @@ This version supports **narrative text and structured findings/recommendations**
 
 Run Word’s Accessibility Checker and arrange review of the exact final public PDF with the responsible court. Preserving source features does not establish accessibility conformance. See [template provenance](NOTICE.md) and [validation limits](docs/VALIDATION.md).
 
+### Prepare the finished PDF for review
+
+1. Finish editing the exported report in desktop Word, run Word’s Accessibility Checker, then save and close the finished `.docx`.
+2. In Report Interview, choose **File → Prepare PDF for review**, select that Word file, and choose where to save the PDF.
+3. Open the saved PDF in **Acrobat Pro**. Run **Check for accessibility** and complete the manual checks. Then run **Print Production → Preflight → Verify compliance with PDF/UA-1 (syntax checks only)** in the **PDF Standards** library.
+4. Fix any issues and recheck the saved PDF. For issues in the report itself, correct the Word file and prepare a fresh PDF.
+
+The app uses desktop Microsoft Word to export a tagged PDF with heading bookmarks, carries over the document title, sets it to display in Acrobat, adds the PDF/UA-1 identifier, and fills missing link descriptions where it can identify the link. When a link needs a description, the app lists the affected PDF pages for the reviewer. Preparation runs on the PC and requires desktop Word. The reviewer uses Acrobat Pro. This workflow requires neither Java nor veraPDF.
+
 ## Build from source
 
-Build dependencies: Go 1.22 or later, the Windows .NET Framework C# compiler, and **Python 3.11** with standard `msilib`. Python is used only to package and verify the MSI; it is not part of the installed application. Python 3.13+ removed `msilib` and cannot run these packaging scripts.
+Build dependencies: Go 1.22 or later, the Windows .NET Framework C# compiler, and **Python 3.11** with standard `msilib`. The build freezes the PDF helper and packages it with the app. A separate Python installation is unnecessary on the review PC. Python 3.13+ removed `msilib` and cannot run these packaging scripts.
 
 ```powershell
 git clone https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer.git
@@ -52,7 +64,7 @@ cd Civil-Grand-Jury-Report-Writer
 .\source\build.ps1 -PythonExecutable 'C:\Path\To\Python311\python.exe'
 ```
 
-Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.2-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. An ordinary Go toolchain and Python are sufficient; no extra Go, Python or NuGet packages are required.
+Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-<version>-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. The build installs the pinned PDF helper dependencies from `source/pdf-build-requirements.txt`. No NuGet packages are required.
 
 ```powershell
 # Engine tests
@@ -69,7 +81,7 @@ if ($p.ExitCode -ne 0) { throw 'Native test failed; inspect work\native-test\FAI
 python .\source\verify_msi.py .\work\msi-test
 ```
 
-The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksums, portable ZIP and validation artifacts. Changing `VERSION` on `main` requests an alpha prerelease after all build checks pass; maintainers may also explicitly request publication with the workflow's `publish_alpha` input. The publishing job verifies downloaded artifact checksums and creates a tag at the exact tested commit. Existing release tags are never overwritten. Stable publication is not enabled. It does not claim a completed install/repair/uninstall/upgrade test on a clean Windows desktop.
+The Windows workflow builds the application and installer, runs the engine/native tests, verifies the MSI payload, and uploads the installer, checksums, portable ZIP and validation artifacts. Changing `VERSION` to an alpha version on `main` requests an alpha prerelease after all build checks pass. Maintainers can also run the workflow explicitly with `publish_alpha` or `publish_beta`. Beta publication requires a matching GitHub draft release. The publishing job verifies package checksums and tags the exact tested commit. Existing release tags are never overwritten. Stable publication is not enabled. It does not claim a completed install/repair/uninstall/upgrade test on a clean Windows desktop.
 
 ## Structure and contributions
 

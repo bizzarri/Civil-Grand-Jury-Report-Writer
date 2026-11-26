@@ -4,14 +4,18 @@ from copy import copy
 import json
 import re
 import sys
-from xml.dom import minidom
+from xml.dom import Node, minidom
+from xml.etree import ElementTree
+from zipfile import ZipFile
 
 from pypdf import PdfWriter
 from pypdf.generic import (
-    ArrayObject, ContentStream, DecodedStreamObject, DictionaryObject,
+    ArrayObject, BooleanObject, ContentStream, DecodedStreamObject, DictionaryObject,
     NameObject, NumberObject, TextStringObject,
 )
 
+DC = "http://purl.org/dc/elements/1.1/"
+XML = "http://www.w3.org/XML/1998/namespace"
 UA = "http://www.aiim.org/pdfua/ns/id/"
 RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 GENERIC_LINKS = {"click here", "here", "read more", "more", "learn more", "link"}
@@ -22,7 +26,90 @@ class ReviewError(Exception):
     pass
 
 
-def set_pdfua_identifier(writer):
+def read_word_title(report):
+    with ZipFile(report) as package:
+        try:
+            core_properties = package.read("docProps/core.xml")
+        except KeyError:
+            return ""
+    return ElementTree.fromstring(core_properties).findtext(f"{{{DC}}}title", "").strip()
+
+
+def text_content(element):
+    return "".join(
+        child.data for child in element.childNodes
+        if child.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+    ).strip()
+
+
+def set_document_title(writer, doc, rdf, word_title):
+    descriptions = [
+        node for node in rdf.getElementsByTagNameNS(RDF, "Description")
+        if node.parentNode is rdf and node.getAttributeNS(RDF, "about") == ""
+    ]
+    title_elements = [
+        child for description in descriptions for child in description.childNodes
+        if child.namespaceURI == DC and child.localName == "title"
+    ]
+    titles = {}
+    for element in title_elements:
+        for item in element.getElementsByTagNameNS(RDF, "li"):
+            language = item.getAttributeNS(XML, "lang")
+            value = text_content(item)
+            if language and value:
+                titles.setdefault(language, value)
+        value = text_content(element)
+        if value:
+            titles.setdefault("x-default", value)
+    for description in descriptions:
+        value = description.getAttributeNS(DC, "title").strip()
+        if value:
+            titles.setdefault("x-default", value)
+
+    info_title = (writer.metadata or {}).get("/Title", "")
+    if not isinstance(info_title, str):
+        info_title = ""
+    title = word_title or titles.get("x-default") or info_title.strip() or next(iter(titles.values()), "")
+    if not title:
+        raise ReviewError(
+            "The report needs a document title. In Word, go to File → Info, enter a Title, "
+            "save the report, and try again."
+        )
+
+    writer.add_metadata({"/Title": title})
+    preferences = writer.viewer_preferences
+    if preferences is None:
+        preferences = writer.create_viewer_preferences()
+    preferences[NameObject("/DisplayDocTitle")] = BooleanObject(True)
+
+    for element in title_elements:
+        element.parentNode.removeChild(element)
+    for description in descriptions:
+        if description.hasAttributeNS(DC, "title"):
+            description.removeAttributeNS(DC, "title")
+
+    if descriptions:
+        description = descriptions[0]
+    else:
+        description = doc.createElementNS(RDF, "rdf:Description")
+        description.setAttribute("xmlns:rdf", RDF)
+        description.setAttributeNS(RDF, "rdf:about", "")
+        rdf.appendChild(description)
+    element = doc.createElementNS(DC, "dc:title")
+    element.setAttribute("xmlns:dc", DC)
+    description.appendChild(element)
+    alternative = doc.createElementNS(RDF, "rdf:Alt")
+    alternative.setAttribute("xmlns:rdf", RDF)
+    element.appendChild(alternative)
+    titles.pop("x-default", None)
+    for language, value in {"x-default": title, **titles}.items():
+        item = doc.createElementNS(RDF, "rdf:li")
+        item.setAttributeNS(XML, "xml:lang", language)
+        item.appendChild(doc.createTextNode(value))
+        alternative.appendChild(item)
+
+
+def set_review_metadata(writer, word_title):
     source = writer.root_object.get("/Metadata")
     if source is None:
         doc = minidom.parseString(
@@ -31,25 +118,23 @@ def set_pdfua_identifier(writer):
     else:
         doc = minidom.parseString(source.get_object().get_data())
     rdf, = doc.getElementsByTagNameNS(RDF, "RDF")
-    declarations = [
-        node.firstChild.data.strip() if node.firstChild else ""
-        for node in doc.getElementsByTagNameNS(UA, "part")
-    ]
+    declarations = [text_content(node) for node in doc.getElementsByTagNameNS(UA, "part")]
     for description in doc.getElementsByTagNameNS(RDF, "Description"):
         if description.hasAttributeNS(UA, "part"):
             declarations.append(description.getAttributeNS(UA, "part").strip())
-    if declarations:
-        if declarations != ["1"]:
-            raise ReviewError("The exported file already declares a conflicting PDF/UA version.")
-        return
-    description = doc.createElementNS(RDF, "rdf:Description")
-    description.setAttribute("xmlns:rdf", RDF)
-    description.setAttributeNS(RDF, "rdf:about", "")
-    description.setAttribute("xmlns:pdfuaid", UA)
-    part = doc.createElementNS(UA, "pdfuaid:part")
-    part.appendChild(doc.createTextNode("1"))
-    description.appendChild(part)
-    rdf.appendChild(description)
+    if declarations and declarations != ["1"]:
+        raise ReviewError("The exported file already declares a conflicting PDF/UA version.")
+    if not declarations:
+        description = doc.createElementNS(RDF, "rdf:Description")
+        description.setAttribute("xmlns:rdf", RDF)
+        description.setAttributeNS(RDF, "rdf:about", "")
+        description.setAttribute("xmlns:pdfuaid", UA)
+        part = doc.createElementNS(UA, "pdfuaid:part")
+        part.appendChild(doc.createTextNode("1"))
+        description.appendChild(part)
+        rdf.appendChild(description)
+
+    set_document_title(writer, doc, rdf, word_title)
     stream = DecodedStreamObject()
     stream.set_data(doc.toxml(encoding="utf-8"))
     stream[NameObject("/Type")] = NameObject("/Metadata")
@@ -155,18 +240,18 @@ def fill_link_contents(writer):
     return sorted(link_pages)
 
 
-def prepare(source, candidate):
+def prepare(source, candidate, word_title=""):
     writer = PdfWriter(clone_from=source)
     link_pages = fill_link_contents(writer)
-    set_pdfua_identifier(writer)
+    set_review_metadata(writer, word_title)
     writer.write(candidate)
     return link_pages
 
 
 def main():
-    source, candidate = sys.argv[1:]
+    source, candidate, report = sys.argv[1:]
     try:
-        link_pages = prepare(source, candidate)
+        link_pages = prepare(source, candidate, read_word_title(report))
     except ReviewError as exc:
         result = {"ok": False, "message": str(exc)}
     except Exception:

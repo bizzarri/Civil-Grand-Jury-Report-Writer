@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0-beta.1
+
+- Prepare a tagged PDF review copy from a finished Word report.
+- Carry over the report title, set the title display preference and add the PDF/UA-1 identifier.
+- Fill in missing link descriptions where possible and identify pages that need review in Acrobat Pro.
+
 ## 2.0.2-alpha.1 — 2026-11-15
 
 - Start new reports in the Report Logic Matrix and open it anytime from the top toolbar.

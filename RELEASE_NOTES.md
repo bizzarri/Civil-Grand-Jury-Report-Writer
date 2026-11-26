@@ -1,18 +1,15 @@
-# v2.0.2-alpha.1
+# v2.1.0-beta.1
 
-New reports start in the Report Logic Matrix. Use the **Report Logic Matrix** button in the top toolbar to open it from any report section.
+This beta is for final testing with synthetic reports.
 
-- Record facts and their sources, link them to findings, and link findings to recommendations. The review tab displays each finding and the evidence and recommendations connected to it.
-- Choose **Open report** anytime. The matrix and the report use the same findings and recommendations. Existing drafts resume at their last report section.
-- Select verified fact statements to append to Discussion. Source notes stay in the matrix. Editing a supporting fact or its sources flags linked findings for author review.
-- Export a working Word copy with **File → Export confidential draft**. This option is available for incomplete reports and adds a faint **CONFIDENTIAL DRAFT** watermark. The standard report export omits the watermark and the matrix.
+- In **File → Prepare PDF for review**, select the finished Word report and choose where to save the review copy. Report Interview uses desktop Word to create a tagged PDF with heading bookmarks.
+- The PDF uses the report's document title, displays it in Acrobat, and includes the PDF/UA-1 identifier. The app fills in missing link descriptions where it can identify the link and lists any pages that need attention.
+- Open the review copy in Acrobat Pro. Run **Check for accessibility**, complete the manual checks, and run **Verify compliance with PDF/UA-1 (syntax checks only)** in Print Production → Preflight. Fix any issues and recheck the saved PDF.
 
-## Install
+PDF preparation runs on the PC and requires desktop Microsoft Word. The reviewer uses Acrobat Pro. Java and veraPDF are unnecessary for this workflow.
 
-Run the x64 MSI, then open **Report Interview** from the Start menu. For the portable version, extract the ZIP and run `ReportInterview.exe` from the extracted folder. Windows 10 or 11 and .NET Framework 4.8 or later are required. The packages are unsigned. `SHA256SUMS.txt` contains both package checksums.
+## Test on Windows
 
-Back up `%LOCALAPPDATA%\ReportInterview\Drafts` before upgrading. If you also test with an earlier app, use a copy of the draft. Saving with an older version can discard matrix data. The app runs locally without AI, telemetry, or cloud processing.
+Use the portable x64 ZIP in a fresh folder and launch `ReportInterview.exe`. The x64 MSI is also available. Windows 10 or 11 and .NET Framework 4.8 or later are required. The packages are unsigned. Compare the download with `SHA256SUMS.txt`.
 
-## Review before publication
-
-The two-verified-facts check is a review warning. The author decides which information belongs in the report. Check the Word layout and watermark appearance in your reader. The separate reviewer PDF remains a follow-up. Please use synthetic examples when reporting issues.
+Use a dummy report with an internal recommendation-to-finding link. Verify that **Title** passes in Acrobat, that the link opens the intended finding, and that accessibility and Preflight checks run on the saved review copy. Use synthetic data when reporting issues.

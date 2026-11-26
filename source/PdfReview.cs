@@ -117,7 +117,7 @@ internal static class PdfReview
             string taggedPdf = Path.Combine(working, "word.pdf");
             string candidate = Path.Combine(working, "candidate.pdf");
             ExportTaggedPdf(document, taggedPdf);
-            int[] linkPages = FinishPdf(taggedPdf, candidate);
+            int[] linkPages = FinishPdf(taggedPdf, candidate, document);
 
             // Stage next to the destination so the prepared file can be moved or replaced atomically.
             staged = Path.Combine(Path.GetDirectoryName(destination), Guid.NewGuid().ToString("N") + ".tmp");
@@ -153,7 +153,7 @@ internal static class PdfReview
             documents = word.Documents;
             doc = documents.Open(FileName: source, ReadOnly: true, AddToRecentFiles: false, Visible: false);
             doc.ExportAsFixedFormat(OutputFileName: output, ExportFormat: 17, OpenAfterExport: false,
-                Item: 0, KeepIRM: true, CreateBookmarks: 1, DocStructureTags: true, UseISO19005_1: false);
+                Item: 0, IncludeDocProps: true, KeepIRM: true, CreateBookmarks: 1, DocStructureTags: true, UseISO19005_1: false);
         }
         catch (COMException error)
         {
@@ -179,10 +179,10 @@ internal static class PdfReview
         }
     }
 
-    private static int[] FinishPdf(string taggedPdf, string candidate)
+    private static int[] FinishPdf(string taggedPdf, string candidate, string document)
     {
         string helper = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportPdf.exe");
-        var start = new ProcessStartInfo(helper, String.Join(" ", new[] { taggedPdf, candidate }
+        var start = new ProcessStartInfo(helper, String.Join(" ", new[] { taggedPdf, candidate, document }
             .Select(path => "\"" + path + "\"")))
         {
             UseShellExecute = false,

@@ -101,6 +101,24 @@ func TestTemplateExportPreservesPackage(t *testing.T) {
 		}
 	}
 }
+func TestExportPreservesTitleInWordMetadata(t *testing.T) {
+	tpl, d := fixture(t)
+	d.Title = "Road maintenance: $5 & café"
+	doc, err := tpl.export(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var props struct {
+		Title string `xml:"http://purl.org/dc/elements/1.1/ title"`
+	}
+	if err = xml.Unmarshal(parts(t, doc)["docProps/core.xml"], &props); err != nil {
+		t.Fatal(err)
+	}
+	if props.Title != d.Title {
+		t.Fatalf("Word title = %q, want %q", props.Title, d.Title)
+	}
+}
+
 func TestExportRequiresVerifiedEvidenceAndValidLinks(t *testing.T) {
 	tpl, d := fixture(t)
 	d.Findings[0].Verified = false

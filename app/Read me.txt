@@ -1,6 +1,6 @@
-REPORT INTERVIEW 2.0.2 ALPHA 1
+REPORT INTERVIEW 2.1.0 BETA 1
 
-Alpha release for testing and feedback. Back up drafts and check exported reports.
+Beta release for final testing. Back up drafts and check exported reports.
 
 Open Report Interview from the Windows Start menu after installation.
 
@@ -23,6 +23,9 @@ Export uses the exact revised accessible CGJA template from the first version. I
 The app checks completeness and your verification flags, not factual truth or legal sufficiency. It never supplies missing report facts or calculates legal response requirements. Check manually entered F/R references after adding or removing findings and recommendations.
 
 This version supports narrative text. Add nested discussion headings, accessible tables, images and appendices in Word after export. Run Word's Accessibility Checker and complete review of the final public PDF. Template preservation is not accessibility certification. Visual Word pagination has not been independently verified in this build environment.
+
+PDF FOR REVIEW
+Use File > Prepare PDF for review and select the finished Word document. Open the review PDF in Acrobat Pro for Check for accessibility, manual review and PDF/UA-1 Preflight. This step uses desktop Word and runs locally.
 
 INSTALLATION
 The MSI installs for your Windows account in:

@@ -35,7 +35,7 @@ si.SetProperty(msilib.PID_PAGECOUNT, 200)
 si.Persist()
 add("Property", [
     ("UpgradeCode", UPGRADE), ("INSTALLLEVEL", "1"), ("DefaultUIFont", "Normal"),
-    ("ARPCOMMENTS", "Alpha release for testing. Guided local report authoring. No AI or cloud processing."),
+    ("ARPCOMMENTS", "Release for testing. Guided local report authoring. No AI or cloud processing."),
     ("ARPNOMODIFY", "1"), ("ARPINSTALLLOCATION", "[INSTALLDIR]"),
     ("SecureCustomProperties", "OLDERPRODUCTS;NEWERPRODUCTS;NETRELEASE;WINDOWSBUILD"),
 ])
@@ -115,7 +115,7 @@ def dialog(name, title, first, default, cancel):
 dialog("WelcomeDlg", "Install Report Interview", "Install", "Install", "Cancel")
 text("WelcomeDlg", "Title", 20, 18, 340, 35, "{\\Heading}Report Interview " + VERSION)
 text("WelcomeDlg", "Body", 20, 65, 340, 128,
-     "ALPHA RELEASE FOR TESTING. Install the native Windows report authoring application for your account.\r\n\r\n"
+     "RELEASE FOR TESTING. Install the native Windows report authoring application for your account.\r\n\r\n"
      "No browser, web server, Python installation, AI or cloud connection is required.\r\n\r\n"
      "Your existing drafts are not modified. After installation, use File > Import existing draft to bring in a browser-version draft.")
 button("WelcomeDlg", "Install", 180, "&Install", "Cancel")

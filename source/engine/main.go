@@ -358,7 +358,9 @@ func (t *Template) exportReport(d Draft, confidential bool) ([]byte, error) {
 		}
 		if f.Name == "docProps/core.xml" {
 			re := regexp.MustCompile(`(?s)<dc:title(?:\s[^>]*)?>.*?</dc:title>|<dc:title\s*/>`)
-			b = re.ReplaceAll(b, []byte("<dc:title>"+esc(d.Title)+"</dc:title>"))
+			b = re.ReplaceAllFunc(b, func([]byte) []byte {
+				return []byte("<dc:title>" + esc(d.Title) + "</dc:title>")
+			})
 		}
 		h := f.FileHeader
 		dst, e := w.CreateHeader(&h)

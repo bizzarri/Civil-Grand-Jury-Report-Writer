@@ -61,7 +61,7 @@ cd Civil-Grand-Jury-Report-Writer
 .\source\build.ps1 -PythonExecutable 'C:\Path\To\Python311\python.exe'
 ```
 
-Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-2.0.2-alpha.1-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. The build installs the pinned PDF helper dependencies from `source/pdf-build-requirements.txt`. No NuGet packages are required.
+Outputs are `app/ReportInterview.exe`, its companion engine/configuration/documentation files, and `dist/ReportInterview-<version>-x64.msi` with a SHA-256 file. `VERSION` supplies the application, assembly and installer versions. The build installs the pinned PDF helper dependencies from `source/pdf-build-requirements.txt`. No NuGet packages are required.
 
 ```powershell
 # Engine tests

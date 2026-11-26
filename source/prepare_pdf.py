@@ -1,15 +1,10 @@
-"""Finish and validate a tagged Word PDF locally before it is saved for review."""
+"""Prepare a tagged Word PDF locally for review in Acrobat Pro."""
 
 from copy import copy
 import json
-import os
-from pathlib import Path
 import re
-import shutil
-import subprocess
 import sys
 from xml.dom import minidom
-from xml.etree import ElementTree
 
 from pypdf import PdfWriter
 from pypdf.generic import (
@@ -129,6 +124,7 @@ def fill_link_contents(writer):
         raise ReviewError("Word exported a PDF without document tags. Ask the reviewer to check the Word export.")
     parent_tree = tree.get_object().get("/ParentTree")
     parents = dict(number_tree(parent_tree.get_object())) if parent_tree else {}
+    link_pages = set()
     for number, page in enumerate(writer.pages, start=1):
         operations = None
         for reference in page.get("/Annots", []):
@@ -153,64 +149,30 @@ def fill_link_contents(writer):
                         if re.match(r"^(https?://|mailto:)", uri, re.IGNORECASE):
                             caption = uri
             if not caption:
-                raise ReviewError(
-                    f"A link on page {number} needs a description. In Word, edit the link text "
-                    "to say where it goes, then try again."
-                )
+                link_pages.add(number)
+                continue
             annotation[NameObject("/Contents")] = TextStringObject(caption)
+    return sorted(link_pages)
 
 
 def prepare(source, candidate):
     writer = PdfWriter(clone_from=source)
-    fill_link_contents(writer)
+    link_pages = fill_link_contents(writer)
     set_pdfua_identifier(writer)
     writer.write(candidate)
-
-
-def validate(java, jar, candidate):
-    try:
-        process = subprocess.run(
-            [java, "-Dfile.encoding=UTF-8", "-jar", jar, "--flavour", "ua1", "--format", "xml", candidate],
-            capture_output=True, timeout=120,
-        )
-        report = ElementTree.fromstring(process.stdout)
-    except (OSError, subprocess.TimeoutExpired, ElementTree.ParseError) as exc:
-        raise ReviewError(
-            "The local accessibility checker could not finish. Ask the reviewer to check Java and veraPDF."
-        ) from exc
-    results = report.findall(".//validationReport")
-    if process.returncode == 0 and len(results) == 1 and results[0].get("isCompliant") == "true":
-        return
-    if len(results) != 1 or results[0].get("isCompliant") != "false":
-        raise ReviewError("The local accessibility checker did not return a result. Ask the reviewer for help.")
-    messages = []
-    for rule in results[0].findall(".//rule[@status='failed']"):
-        message = rule.findtext("./check/errorMessage") or rule.findtext("description")
-        if message and message not in messages:
-            messages.append(message)
-    details = "\n".join("• " + item for item in messages[:4])
-    raise ReviewError(
-        "The PDF needs more accessibility work. Ask the reviewer to check the Word file. "
-        "No review PDF was saved." + ("\n\n" + details if details else "")
-    )
+    return link_pages
 
 
 def main():
-    source, candidate, jar = sys.argv[1:]
-    java_home = os.environ.get("JAVA_HOME")
-    local_java = Path(java_home) / "bin" / ("java.exe" if os.name == "nt" else "java") if java_home else None
-    java = str(local_java) if local_java and local_java.is_file() else shutil.which("java")
+    source, candidate = sys.argv[1:]
     try:
-        if not java:
-            raise ReviewError("Java is needed by the local accessibility checker. Ask the reviewer to install it once.")
-        prepare(source, candidate)
-        validate(java, jar, candidate)
+        link_pages = prepare(source, candidate)
     except ReviewError as exc:
         result = {"ok": False, "message": str(exc)}
     except Exception:
         result = {"ok": False, "message": "The exported PDF could not be prepared. Ask the reviewer to check the Word file."}
     else:
-        result = {"ok": True}
+        result = {"ok": True, "linkPages": link_pages}
     print(json.dumps(result))
     return 0 if result["ok"] else 1
 

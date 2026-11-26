@@ -39,9 +39,6 @@ public sealed partial class ReportForm
                 document = picker.FileName;
             }
 
-            string validator = FindPdfValidator();
-            if (validator == null) return;
-
             string destination;
             using (var picker = new SaveFileDialog
             {
@@ -61,12 +58,15 @@ public sealed partial class ReportForm
             preparingPdf = true;
             Enabled = false;
             UseWaitCursor = true;
-            status.Text = "Preparing and checking the PDF on this PC…";
-            await PdfReview.PrepareAsync(document, destination, validator);
-            status.Text = "PDF ready for accessibility review";
-            MessageBox.Show(this, "The PDF passed the automated checks and is ready for accessibility review. "
-                + "Have the reviewer check reading order, tables and links before publication.\n\n"
-                + destination, "PDF ready for accessibility review", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            status.Text = "Preparing the PDF on this PC…";
+            int[] linkPages = await PdfReview.PrepareAsync(document, destination);
+            status.Text = "PDF prepared for review";
+            string linkNote = linkPages.Length == 0 ? "" :
+                "\n\nCheck link descriptions on these PDF pages: " + String.Join(", ", linkPages) + ".";
+            MessageBox.Show(this, "Open the saved PDF in Acrobat Pro. Run Check for accessibility and complete the "
+                + "manual checks. In Print Production → Preflight, run Verify compliance with PDF/UA-1 (syntax checks only)."
+                + linkNote + "\n\n" + destination,
+                "PDF prepared for review", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception error)
         {
@@ -80,70 +80,25 @@ public sealed partial class ReportForm
             Enabled = true;
         }
     }
-
-    private string FindPdfValidator()
-    {
-        string settings = Path.Combine(engine.DataDir, "verapdf-path.txt");
-        if (File.Exists(settings))
-        {
-            string saved = File.ReadAllText(settings).Trim();
-            if (PdfReview.IsValidator(saved)) return saved;
-        }
-        foreach (string folder in new[]
-        {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "veraPDF", "bin"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "veraPDF", "bin")
-        })
-        {
-            if (!Directory.Exists(folder)) continue;
-            string[] candidates = Directory.GetFiles(folder, "cli-*.jar");
-            if (candidates.Length == 1) return candidates[0];
-        }
-        MessageBox.Show(this, "One-time setup for the reviewer. Select the veraPDF command-line JAR "
-            + "(cli-*.jar) in the bin folder of the official veraPDF installation. If veraPDF is missing, "
-            + "cancel and ask the reviewer to install it with the command-line component.",
-            "Set up the local accessibility checker", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        using (var picker = new OpenFileDialog
-        {
-            Title = "Choose the veraPDF command-line JAR",
-            Filter = "veraPDF command-line JAR (cli-*.jar)|cli-*.jar",
-            CheckFileExists = true
-        })
-        {
-            if (picker.ShowDialog(this) != DialogResult.OK) return null;
-            if (!PdfReview.IsValidator(picker.FileName))
-                throw new IOException("Choose the cli-*.jar file in veraPDF’s bin folder.");
-            Directory.CreateDirectory(engine.DataDir);
-            File.WriteAllText(settings, picker.FileName);
-            return picker.FileName;
-        }
-    }
 }
 
 internal static class PdfReview
 {
-    public sealed class CheckResult
+    public sealed class PreparationResult
     {
         public bool ok { get; set; }
         public string message { get; set; }
+        public int[] linkPages { get; set; }
     }
 
-    internal static bool IsValidator(string path)
+    internal static Task<int[]> PrepareAsync(string document, string destination)
     {
-        return File.Exists(path)
-            && Path.GetFileName(path).StartsWith("cli-", StringComparison.OrdinalIgnoreCase)
-            && Path.GetExtension(path).Equals(".jar", StringComparison.OrdinalIgnoreCase);
-    }
-
-    internal static Task PrepareAsync(string document, string destination, string validator)
-    {
-        var completion = new TaskCompletionSource<bool>();
+        var completion = new TaskCompletionSource<int[]>();
         var worker = new Thread(delegate()
         {
             try
             {
-                Prepare(document, destination, validator);
-                completion.SetResult(true);
+                completion.SetResult(Prepare(document, destination));
             }
             catch (Exception error) { completion.SetException(error); }
         }) { IsBackground = true };
@@ -152,7 +107,7 @@ internal static class PdfReview
         return completion.Task;
     }
 
-    private static void Prepare(string document, string destination, string validator)
+    private static int[] Prepare(string document, string destination)
     {
         string working = Path.Combine(Path.GetTempPath(), "ReportInterview-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(working);
@@ -162,13 +117,14 @@ internal static class PdfReview
             string taggedPdf = Path.Combine(working, "word.pdf");
             string candidate = Path.Combine(working, "candidate.pdf");
             ExportTaggedPdf(document, taggedPdf);
-            CheckAndFinish(taggedPdf, candidate, validator);
+            int[] linkPages = FinishPdf(taggedPdf, candidate);
 
-            // Stage next to the destination so a checked file can be moved or replaced atomically.
+            // Stage next to the destination so the prepared file can be moved or replaced atomically.
             staged = Path.Combine(Path.GetDirectoryName(destination), Guid.NewGuid().ToString("N") + ".tmp");
             File.Copy(candidate, staged);
             if (File.Exists(destination)) File.Replace(staged, destination, null);
             else File.Move(staged, destination);
+            return linkPages;
         }
         finally
         {
@@ -223,10 +179,10 @@ internal static class PdfReview
         }
     }
 
-    private static void CheckAndFinish(string taggedPdf, string candidate, string validator)
+    private static int[] FinishPdf(string taggedPdf, string candidate)
     {
         string helper = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportPdf.exe");
-        var start = new ProcessStartInfo(helper, String.Join(" ", new[] { taggedPdf, candidate, validator }
+        var start = new ProcessStartInfo(helper, String.Join(" ", new[] { taggedPdf, candidate }
             .Select(path => "\"" + path + "\"")))
         {
             UseShellExecute = false,
@@ -237,19 +193,22 @@ internal static class PdfReview
         using (Process process = Process.Start(start))
         {
             Task<string> output = process.StandardOutput.ReadToEndAsync();
-            if (!process.WaitForExit(150000))
+            if (!process.WaitForExit(60000))
             {
                 process.Kill();
-                throw new IOException("The local accessibility check took too long. Try again or ask the reviewer for help.");
+                throw new IOException("PDF preparation took too long. Try again or ask the reviewer for help.");
             }
-            CheckResult result;
-            try { result = new JavaScriptSerializer().Deserialize<CheckResult>(output.Result); }
+            PreparationResult result;
+            try { result = new JavaScriptSerializer().Deserialize<PreparationResult>(output.Result); }
             catch (ArgumentException) { result = null; }
             catch (InvalidOperationException) { result = null; }
             if (result == null)
                 throw new IOException("The local PDF helper did not return a result. Ask the reviewer to check the installation.");
             if (!result.ok || process.ExitCode != 0)
-                throw new IOException(result.message ?? "The local PDF helper could not check the report.");
+                throw new IOException(result.message ?? "The local PDF helper could not prepare the report.");
+            if (result.linkPages == null || !File.Exists(candidate))
+                throw new IOException("The local PDF helper did not finish preparing the report.");
+            return result.linkPages;
         }
     }
 }

@@ -1,3 +1,7 @@
+import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,7 +11,10 @@ from pypdf.generic import (
     ArrayObject, DecodedStreamObject, DictionaryObject, NameObject, NumberObject, RectangleObject, TextStringObject,
 )
 
-from prepare_pdf import ReviewError, prepare
+from prepare_pdf import prepare
+
+
+HELPER = [sys.executable, str(Path(__file__).with_name("prepare_pdf.py").resolve())]
 
 
 def pdf_dict(**items):
@@ -41,8 +48,8 @@ class PrepareTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             source, candidate, repeated = (Path(tmp) / name for name in ("source.pdf", "out.pdf", "again.pdf"))
             fixture(source)
-            prepare(source, candidate)
-            prepare(candidate, repeated)
+            self.assertEqual(prepare(source, candidate), [])
+            self.assertEqual(prepare(candidate, repeated), [])
             first, last = PdfReader(candidate), PdfReader(repeated)
             for pdf in (first, last):
                 self.assertEqual(pdf.pages[0]["/Annots"][0].get_object()["/Contents"], "See Finding F1")
@@ -53,9 +60,9 @@ class PrepareTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             source, candidate = (Path(tmp) / name for name in ("source.pdf", "out.pdf"))
             fixture(source, "click here")
-            with self.assertRaisesRegex(ReviewError, "link on page 1 needs a description"):
-                prepare(source, candidate)
-            self.assertFalse(candidate.exists())
+            self.assertEqual(prepare(source, candidate), [1])
+            result = PdfReader(candidate)
+            self.assertNotIn("/Contents", result.pages[0]["/Annots"][0].get_object())
 
     def test_existing_description_is_preserved(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -69,5 +76,23 @@ class PrepareTests(unittest.TestCase):
             self.assertEqual(result.pages[0]["/Annots"][0].get_object()["/Contents"], "Finding one")
 
 
+    def test_helper_prepares_pdf_without_java(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, candidate = (Path(tmp) / name for name in ("source file.pdf", "review file.pdf"))
+            fixture(source)
+            env = {key: value for key, value in os.environ.items() if key.upper() not in ("JAVA_HOME", "PATH")}
+            env["PATH"] = ""
+            result = subprocess.run(HELPER + [str(source), str(candidate)], env=env,
+                                    timeout=60, capture_output=True, check=True)
+            self.assertEqual(json.loads(result.stdout), {"ok": True, "linkPages": []})
+            pdf = PdfReader(candidate)
+            self.assertEqual(pdf.pages[0]["/Annots"][0].get_object()["/Contents"], "See Finding F1")
+            self.assertIn(b"<pdfuaid:part>1</pdfuaid:part>", pdf.trailer["/Root"]["/Metadata"].get_data())
+
+
 if __name__ == "__main__":
+    if "--helper" in sys.argv:
+        index = sys.argv.index("--helper")
+        HELPER = [str(Path(sys.argv[index + 1]).resolve())]
+        del sys.argv[index:index + 2]
     unittest.main()

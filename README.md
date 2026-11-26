@@ -46,11 +46,10 @@ Run Word’s Accessibility Checker and arrange review of the exact final public 
 
 1. Finish editing the exported report in desktop Word, run Word’s Accessibility Checker, then save and close the finished `.docx`.
 2. In Report Interview, choose **File → Prepare PDF for review**, select that Word file, and choose where to save the PDF.
-3. Have the designated reviewer open the saved PDF for the reading-order, table, link and other manual checks before publication.
+3. Open the saved PDF in **Acrobat Pro**. Run **Check for accessibility** and complete the manual checks. Then run **Print Production → Preflight → Verify compliance with PDF/UA-1 (syntax checks only)** in the **PDF Standards** library.
+4. Fix any issues and recheck the saved PDF. For issues in the report itself, correct the Word file and prepare a fresh PDF.
 
-The app uses desktop Word to export a tagged PDF, fills missing link descriptions where it can identify the link, sets the PDF/UA-1 identifier, and runs veraPDF’s automated PDF/UA-1 checks. The files are processed on the PC. If the checks fail, the app explains what needs review and preserves any existing PDF.
-
-For one-time setup, the reviewer needs desktop Microsoft Word, Java, and the **CLI** component of the [stable veraPDF installer](https://software.verapdf.org/). If the application cannot locate veraPDF, select the `cli-*.jar` file from its installation’s `bin` folder. Report Interview remembers the selection for that Windows user. The Word authoring and export features work independently of these PDF review prerequisites.
+The app uses desktop Microsoft Word to export a tagged PDF, adds the PDF/UA-1 identifier and fills missing link descriptions where it can identify the link. When a link needs a description, the app lists the affected PDF pages for the reviewer. Everything runs on the PC. The Acrobat checks and manual review establish whether the prepared PDF is ready for publication.
 
 ## Build from source
 

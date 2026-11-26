@@ -34,10 +34,10 @@ try {
 # Freeze the PDF helper so the review PC does not need a separate Python installation.
 & $PythonExecutable -m pip install -r "$PSScriptRoot\pdf-build-requirements.txt"
 if ($LASTEXITCODE -ne 0) { throw 'PDF helper build dependencies could not be installed' }
-& $PythonExecutable "$PSScriptRoot\test_prepare_pdf.py"
-if ($LASTEXITCODE -ne 0) { throw 'PDF preparation tests failed' }
 & $PythonExecutable -m PyInstaller --noconfirm --clean --onefile --console --name ReportPdf --distpath $appDir --workpath "$generatedDir\pdf" --specpath $generatedDir "$PSScriptRoot\prepare_pdf.py"
 if ($LASTEXITCODE -ne 0) { throw 'PDF helper build failed' }
+& $PythonExecutable "$PSScriptRoot\test_prepare_pdf.py" --helper "$appDir\ReportPdf.exe"
+if ($LASTEXITCODE -ne 0) { throw 'PDF preparation tests failed' }
 & $PythonExecutable "$PSScriptRoot\pdf_notices.py" "$appDir\PDF-Third-Party-Notices.txt"
 if ($LASTEXITCODE -ne 0) { throw 'PDF helper notices could not be built' }
 # Python 3.11 with msilib is used only to build the installer, never at runtime.

@@ -112,16 +112,22 @@ class PrepareTests(unittest.TestCase):
             fixture(root / "fixture.pdf")
             writer = PdfWriter(clone_from=root / "fixture.pdf")
             writer.xmp_metadata = (
+                '<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
                 f'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="{RDF}">'
                 f'<rdf:Description rdf:about="" xmlns:dc="{DC}"><dc:title><rdf:Alt>'
                 '<rdf:li xml:lang="x-default">PDF title</rdf:li><rdf:li xml:lang="fr">Titre</rdf:li>'
-                '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>'
+                '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>\n'
+                '<?xpacket end="w"?>'
             ).encode()
             writer.write(root / "before.pdf")
             prepare(root / "before.pdf", root / "after.pdf")
             pdf = PdfReader(root / "after.pdf")
             self.assertEqual(pdf.metadata.title, "PDF title")
             self.assertEqual(pdf.xmp_metadata.dc_title, {"x-default": "PDF title", "fr": "Titre"})
+            packet = pdf.root_object["/Metadata"].get_data()
+            self.assertTrue(packet.startswith('<?xpacket begin="\ufeff"'.encode()))
+            self.assertTrue(packet.endswith(b'<?xpacket end="w"?>'))
+            self.assertNotIn(b"<?xml ", packet)
 
     def test_missing_report_title_gets_an_actionable_error(self):
         with tempfile.TemporaryDirectory() as tmp:

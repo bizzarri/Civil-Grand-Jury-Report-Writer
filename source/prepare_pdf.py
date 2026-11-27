@@ -136,7 +136,14 @@ def set_review_metadata(writer, word_title):
 
     set_document_title(writer, doc, rdf, word_title)
     stream = DecodedStreamObject()
-    stream.set_data(doc.toxml(encoding="utf-8"))
+    # XML declarations are not part of an embedded XMP packet.
+    # Serialize the RDF wrapper without minidom's document-level declaration.
+    packet = (
+        '<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
+        + doc.documentElement.toxml()
+        + '\n<?xpacket end="w"?>'
+    )
+    stream.set_data(packet.encode("utf-8"))
     stream[NameObject("/Type")] = NameObject("/Metadata")
     stream[NameObject("/Subtype")] = NameObject("/XML")
     writer.root_object[NameObject("/Metadata")] = writer._add_object(stream)

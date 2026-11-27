@@ -10,10 +10,10 @@ A local Windows application that guides an author through a civil grand jury rep
 
 Requirements: **64-bit Windows 10 or Windows 11, with .NET Framework 4.8 or later**. Users do not need Go or Python installed.
 
-Download **v2.1.0-beta.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.1.0-beta.1). The beta packages are unsigned. Compare their SHA-256 hashes with `SHA256SUMS.txt`.
+Download **v2.1.0-beta.2** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.1.0-beta.2). The beta packages are unsigned. Compare their SHA-256 hashes with `SHA256SUMS.txt`.
 
-- **Installer:** Run `ReportInterview-2.1.0-beta.1-x64.msi`, then open **Report Interview** from the Start menu.
-- **Portable:** Extract `ReportInterview-2.1.0-beta.1-portable-x64.zip` to its own folder and run `ReportInterview.exe`. Keep the companion files together.
+- **Installer:** Run `ReportInterview-2.1.0-beta.2-x64.msi`, then open **Report Interview** from the Start menu.
+- **Portable:** Extract `ReportInterview-2.1.0-beta.2-portable-x64.zip` to its own folder and run `ReportInterview.exe`. Keep the companion files together.
 
 See the [release notes](RELEASE_NOTES.md) for the tested PDF review workflow.
 

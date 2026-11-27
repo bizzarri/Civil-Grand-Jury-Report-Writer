@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0-beta.2
+
+- Add **Prepare PDF for publication** to remove the writer’s draft watermark from a temporary Word copy.
+- Write PDF metadata as a standard XMP packet to fix PAC’s unexpected XML declaration error.
+
 ## 2.1.0-beta.1
 
 - Prepare a tagged PDF review copy from a finished Word report.

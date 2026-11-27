@@ -16,15 +16,24 @@ public sealed partial class ReportForm
     private void AddPdfReviewCommand(ToolStripMenuItem file)
     {
         file.DropDownItems.Add(new ToolStripMenuItem("Prepare PDF for &review…", null, PreparePdfForReview));
+        file.DropDownItems.Add(new ToolStripMenuItem("Prepare PDF for &publication…", null,
+            delegate { PreparePdf(true); }));
         FormClosing += delegate(object sender, FormClosingEventArgs args)
         {
             if (preparingPdf) args.Cancel = true;
         };
     }
 
-    private async void PreparePdfForReview(object sender, EventArgs args)
+    private void PreparePdfForReview(object sender, EventArgs args)
+    {
+        PreparePdf(false);
+    }
+
+    private async void PreparePdf(bool publication)
     {
         if (preparingPdf) return;
+        string purpose = publication ? "publication" : "review";
+        string preparedTitle = "PDF prepared for " + purpose;
         try
         {
             string document;
@@ -42,9 +51,9 @@ public sealed partial class ReportForm
             string destination;
             using (var picker = new SaveFileDialog
             {
-                Title = "Save the PDF for accessibility review",
+                Title = "Save the PDF for " + purpose,
                 InitialDirectory = Path.GetDirectoryName(document),
-                FileName = Path.GetFileNameWithoutExtension(document) + " - Review.pdf",
+                FileName = Path.GetFileNameWithoutExtension(document) + (publication ? " - Publication.pdf" : " - Review.pdf"),
                 Filter = "PDF files (*.pdf)|*.pdf",
                 DefaultExt = "pdf",
                 AddExtension = true,
@@ -55,23 +64,26 @@ public sealed partial class ReportForm
                 destination = picker.FileName;
             }
 
+            if (!Path.GetExtension(destination).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Choose a file name ending in .pdf.");
+
             preparingPdf = true;
             Enabled = false;
             UseWaitCursor = true;
             status.Text = "Preparing the PDF on this PC…";
-            int[] linkPages = await PdfReview.PrepareAsync(document, destination);
-            status.Text = "PDF prepared for review";
+            int[] linkPages = await PdfReview.PrepareAsync(document, destination, publication);
+            status.Text = preparedTitle;
             string linkNote = linkPages.Length == 0 ? "" :
                 "\n\nCheck link descriptions on these PDF pages: " + String.Join(", ", linkPages) + ".";
             MessageBox.Show(this, "Open the saved PDF in Acrobat Pro. Run Check for accessibility and complete the "
                 + "manual checks. In Print Production → Preflight, run Verify compliance with PDF/UA-1 (syntax checks only)."
                 + linkNote + "\n\n" + destination,
-                "PDF prepared for review", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                preparedTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception error)
         {
             status.Text = "PDF preparation did not finish.";
-            MessageBox.Show(this, error.Message, "Prepare PDF for review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, error.Message, "Prepare PDF for " + purpose, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally
         {
@@ -91,14 +103,14 @@ internal static class PdfReview
         public int[] linkPages { get; set; }
     }
 
-    internal static Task<int[]> PrepareAsync(string document, string destination)
+    internal static Task<int[]> PrepareAsync(string document, string destination, bool publication)
     {
         var completion = new TaskCompletionSource<int[]>();
         var worker = new Thread(delegate()
         {
             try
             {
-                completion.SetResult(Prepare(document, destination));
+                completion.SetResult(Prepare(document, destination, publication));
             }
             catch (Exception error) { completion.SetException(error); }
         }) { IsBackground = true };
@@ -107,7 +119,7 @@ internal static class PdfReview
         return completion.Task;
     }
 
-    private static int[] Prepare(string document, string destination)
+    private static int[] Prepare(string document, string destination, bool publication)
     {
         string working = Path.Combine(Path.GetTempPath(), "ReportInterview-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(working);
@@ -116,8 +128,14 @@ internal static class PdfReview
         {
             string taggedPdf = Path.Combine(working, "word.pdf");
             string candidate = Path.Combine(working, "candidate.pdf");
-            ExportTaggedPdf(document, taggedPdf);
-            int[] linkPages = FinishPdf(taggedPdf, candidate, document);
+            string source = document;
+            if (publication)
+            {
+                source = Path.Combine(working, Path.GetFileName(document));
+                RunPdfHelper(source, "--publication-word-copy", document, source);
+            }
+            ExportTaggedPdf(source, taggedPdf);
+            int[] linkPages = RunPdfHelper(candidate, taggedPdf, candidate, document);
 
             // Stage next to the destination so the prepared file can be moved or replaced atomically.
             staged = Path.Combine(Path.GetDirectoryName(destination), Guid.NewGuid().ToString("N") + ".tmp");
@@ -179,10 +197,10 @@ internal static class PdfReview
         }
     }
 
-    private static int[] FinishPdf(string taggedPdf, string candidate, string document)
+    private static int[] RunPdfHelper(string outputPath, params string[] arguments)
     {
         string helper = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportPdf.exe");
-        var start = new ProcessStartInfo(helper, String.Join(" ", new[] { taggedPdf, candidate, document }
+        var start = new ProcessStartInfo(helper, String.Join(" ", arguments
             .Select(path => "\"" + path + "\"")))
         {
             UseShellExecute = false,
@@ -206,7 +224,7 @@ internal static class PdfReview
                 throw new IOException("The local PDF helper did not return a result. Ask the reviewer to check the installation.");
             if (!result.ok || process.ExitCode != 0)
                 throw new IOException(result.message ?? "The local PDF helper could not prepare the report.");
-            if (result.linkPages == null || !File.Exists(candidate))
+            if (result.linkPages == null || !File.Exists(outputPath))
                 throw new IOException("The local PDF helper did not finish preparing the report.");
             return result.linkPages;
         }

@@ -1,15 +1,9 @@
-# v2.1.0-beta.1
+# v2.1.0-beta.2
 
-This is the first beta of the Windows Report Writer. It adds a local PDF preparation workflow for review in Acrobat Pro.
+- **Prepare PDF for review** carries through the watermark on a confidential Word draft.
+- **Prepare PDF for publication** removes Report Interview's **CONFIDENTIAL DRAFT** watermark from a temporary copy of the finished Word report. The original draft keeps its watermark and Word edits.
+- Review and publication PDFs now use a standard XMP packet, which fixes PAC's unexpected XML declaration error.
 
-- In **File → Prepare PDF for review**, select the finished Word report and choose where to save the review copy. Report Interview uses desktop Word to create a tagged PDF with heading bookmarks.
-- The PDF uses the report's document title, displays it in Acrobat, and includes the PDF/UA-1 identifier. The app fills in missing link descriptions where it can identify the link and lists any pages that need attention.
-- Open the review copy in Acrobat Pro. Run **Check for accessibility**, complete the manual checks, and run **Verify compliance with PDF/UA-1 (syntax checks only)** in Print Production → Preflight. Fix any issues and recheck the saved PDF.
+Both export paths passed desktop testing with synthetic reports. Run the final Acrobat Pro and PAC checks on the exact PDF you intend to publish.
 
-PDF preparation runs on the PC and requires desktop Microsoft Word. The reviewer uses Acrobat Pro. Java and veraPDF are unnecessary for this workflow.
-
-## Test on Windows
-
-Use the portable x64 ZIP in a fresh folder and launch `ReportInterview.exe`. The x64 MSI is also available. Windows 10 or 11 and .NET Framework 4.8 or later are required. The packages are unsigned. Compare the download with `SHA256SUMS.txt`.
-
-Use a dummy report with an internal recommendation-to-finding link. Verify that **Title** passes in Acrobat, that the link opens the intended finding, and that accessibility and Preflight checks run on the saved review copy. Use synthetic data when reporting issues.
+This release includes an x64 MSI, a portable ZIP, and SHA-256 checksums. The Windows packages are unsigned. PDF preparation requires desktop Microsoft Word and runs locally.

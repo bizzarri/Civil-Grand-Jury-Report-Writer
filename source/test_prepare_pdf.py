@@ -112,16 +112,22 @@ class PrepareTests(unittest.TestCase):
             fixture(root / "fixture.pdf")
             writer = PdfWriter(clone_from=root / "fixture.pdf")
             writer.xmp_metadata = (
+                '<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
                 f'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="{RDF}">'
                 f'<rdf:Description rdf:about="" xmlns:dc="{DC}"><dc:title><rdf:Alt>'
                 '<rdf:li xml:lang="x-default">PDF title</rdf:li><rdf:li xml:lang="fr">Titre</rdf:li>'
-                '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>'
+                '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>\n'
+                '<?xpacket end="w"?>'
             ).encode()
             writer.write(root / "before.pdf")
             prepare(root / "before.pdf", root / "after.pdf")
             pdf = PdfReader(root / "after.pdf")
             self.assertEqual(pdf.metadata.title, "PDF title")
             self.assertEqual(pdf.xmp_metadata.dc_title, {"x-default": "PDF title", "fr": "Titre"})
+            packet = pdf.root_object["/Metadata"].get_data()
+            self.assertTrue(packet.startswith('<?xpacket begin="\ufeff"'.encode()))
+            self.assertTrue(packet.endswith(b'<?xpacket end="w"?>'))
+            self.assertNotIn(b"<?xml ", packet)
 
     def test_missing_report_title_gets_an_actionable_error(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -131,6 +137,37 @@ class PrepareTests(unittest.TestCase):
                 prepare(source, candidate)
             self.assertFalse(candidate.exists())
 
+
+
+class PublicationWordTests(unittest.TestCase):
+    def test_publication_copy_removes_only_the_draft_watermark(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "Word report with edits.docx"
+            destination = Path(tmp) / "Temporary publication copy.docx"
+            footer = (
+                '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+                'xmlns:v="urn:schemas-microsoft-com:vml">'
+                '<w:p><w:r><w:t>Edited footer text</w:t></w:r><w:r><w:pict>'
+                '<v:shape id="ReportConfidentialDraft"><v:textpath string="CONFIDENTIAL DRAFT"/></v:shape>'
+                '<v:shape id="Logo"><v:textpath string="Logo"/></v:shape>'
+                '</w:pict></w:r></w:p></w:ftr>'
+            )
+            with ZipFile(source, "w") as document:
+                document.writestr("word/footer1.xml", footer)
+                document.writestr("word/document.xml", b"Edited Word report body")
+                document.writestr("word/media/figure.png", b"Edited figure")
+            original = source.read_bytes()
+            result = subprocess.run(HELPER + ["--publication-word-copy", str(source), str(destination)],
+                                    timeout=60, capture_output=True, check=True)
+            self.assertTrue(json.loads(result.stdout)["ok"])
+            self.assertEqual(source.read_bytes(), original)
+            with ZipFile(destination) as document:
+                adjusted = document.read("word/footer1.xml")
+                self.assertNotIn(b"CONFIDENTIAL DRAFT", adjusted)
+                self.assertIn(b"Edited footer text", adjusted)
+                self.assertIn(b'id="Logo"', adjusted)
+                self.assertEqual(document.read("word/document.xml"), b"Edited Word report body")
+                self.assertEqual(document.read("word/media/figure.png"), b"Edited figure")
 
 
 if __name__ == "__main__":

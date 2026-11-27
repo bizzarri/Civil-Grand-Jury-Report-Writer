@@ -136,7 +136,14 @@ def set_review_metadata(writer, word_title):
 
     set_document_title(writer, doc, rdf, word_title)
     stream = DecodedStreamObject()
-    stream.set_data(doc.toxml(encoding="utf-8"))
+    # XML declarations are not part of an embedded XMP packet.
+    # Serialize the RDF wrapper without minidom's document-level declaration.
+    packet = (
+        '<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
+        + doc.documentElement.toxml()
+        + '\n<?xpacket end="w"?>'
+    )
+    stream.set_data(packet.encode("utf-8"))
     stream[NameObject("/Type")] = NameObject("/Metadata")
     stream[NameObject("/Subtype")] = NameObject("/XML")
     writer.root_object[NameObject("/Metadata")] = writer._add_object(stream)
@@ -248,14 +255,51 @@ def prepare(source, candidate, word_title=""):
     return link_pages
 
 
+def publication_word_copy(source, destination):
+    # Word anchors our repeating VML WordArt in the footer. Only matching shapes are removed.
+    vml = "urn:schemas-microsoft-com:vml"
+    label = "CONFIDENTIAL DRAFT"
+    with ZipFile(source) as report, ZipFile(destination, "w") as copy_file:
+        for part in report.infolist():
+            data = report.read(part)
+            if re.fullmatch(r"word/(?:header|footer)\d*\.xml", part.filename):
+                xml = minidom.parseString(data)
+                changed = False
+                for shape in list(xml.getElementsByTagNameNS(vml, "shape")):
+                    text_paths = shape.getElementsByTagNameNS(vml, "textpath")
+                    matches_label = any(node.getAttribute("string").strip() == label for node in text_paths)
+                    style = shape.getAttribute("style").replace(" ", "").lower()
+                    is_draft_mark = (
+                        shape.getAttribute("id") == "ReportConfidentialDraft"
+                        or shape.getAttribute("type") == "#ReportDraftText"
+                        or all(value in style for value in ("width:440pt", "height:65pt", "rotation:315"))
+                    )
+                    if matches_label and is_draft_mark:
+                        shape.parentNode.removeChild(shape)
+                        changed = True
+                # If Word rewrote the shape into an unrecognized object, send it back for review.
+                if label in " ".join(xml.documentElement.toxml().upper().split()):
+                    raise ReviewError(
+                        "The Word report still contains a confidential draft mark in a header or footer "
+                        "that could not be removed automatically. Ask the reviewer to check it in Word."
+                    )
+                if changed:
+                    data = xml.documentElement.toxml().encode("utf-8")
+            copy_file.writestr(part, data)
+
+
 def main():
-    source, candidate, report = sys.argv[1:]
     try:
-        link_pages = prepare(source, candidate, read_word_title(report))
+        source, candidate, report = sys.argv[1:]
+        if source == "--publication-word-copy":
+            publication_word_copy(candidate, report)
+            link_pages = []
+        else:
+            link_pages = prepare(source, candidate, read_word_title(report))
     except ReviewError as exc:
         result = {"ok": False, "message": str(exc)}
     except Exception:
-        result = {"ok": False, "message": "The exported PDF could not be prepared. Ask the reviewer to check the Word file."}
+        result = {"ok": False, "message": "The report could not be prepared. Ask the reviewer to check the Word file."}
     else:
         result = {"ok": True, "linkPages": link_pages}
     print(json.dumps(result))

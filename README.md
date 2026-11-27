@@ -10,10 +10,10 @@ A local Windows application that guides an author through a civil grand jury rep
 
 Requirements: **64-bit Windows 10 or Windows 11, with .NET Framework 4.8 or later**. Users do not need Go or Python installed.
 
-Download **v2.1.0-beta.1** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.1.0-beta.1). The beta packages are unsigned. Compare their SHA-256 hashes with `SHA256SUMS.txt`.
+Download **v2.1.0-beta.2** from [GitHub Releases](https://github.com/bizzarri/Civil-Grand-Jury-Report-Writer/releases/tag/v2.1.0-beta.2). The beta packages are unsigned. Compare their SHA-256 hashes with `SHA256SUMS.txt`.
 
-- **Installer:** Run `ReportInterview-2.1.0-beta.1-x64.msi`, then open **Report Interview** from the Start menu.
-- **Portable:** Extract `ReportInterview-2.1.0-beta.1-portable-x64.zip` to its own folder and run `ReportInterview.exe`. Keep the companion files together.
+- **Installer:** Run `ReportInterview-2.1.0-beta.2-x64.msi`, then open **Report Interview** from the Start menu.
+- **Portable:** Extract `ReportInterview-2.1.0-beta.2-portable-x64.zip` to its own folder and run `ReportInterview.exe`. Keep the companion files together.
 
 See the [release notes](RELEASE_NOTES.md) for the tested PDF review workflow.
 
@@ -53,6 +53,10 @@ Run Word’s Accessibility Checker and arrange review of the exact final public 
 4. Fix any issues and recheck the saved PDF. For issues in the report itself, correct the Word file and prepare a fresh PDF.
 
 The app uses desktop Microsoft Word to export a tagged PDF with heading bookmarks, carries over the document title, sets it to display in Acrobat, adds the PDF/UA-1 identifier, and fills missing link descriptions where it can identify the link. When a link needs a description, the app lists the affected PDF pages for the reviewer. Preparation runs on the PC and requires desktop Word. The reviewer uses Acrobat Pro. This workflow requires neither Java nor veraPDF.
+
+### Prepare the publication copy
+
+When the edits are complete, choose **File → Prepare PDF for publication** and select the finished Word file. The writer makes a clean PDF by removing its **CONFIDENTIAL DRAFT** watermark from a temporary Word copy. It preserves the original Word draft and any Word edits. **Prepare PDF for review** keeps the watermark if the selected Word draft has it. Run the final accessibility and publication checks on the exact clean PDF.
 
 ## Build from source
 

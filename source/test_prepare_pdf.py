@@ -139,6 +139,37 @@ class PrepareTests(unittest.TestCase):
 
 
 
+class PublicationWordTests(unittest.TestCase):
+    def test_publication_copy_removes_only_the_draft_watermark(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "Word report with edits.docx"
+            destination = Path(tmp) / "Temporary publication copy.docx"
+            footer = (
+                '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+                'xmlns:v="urn:schemas-microsoft-com:vml">'
+                '<w:p><w:r><w:t>Edited footer text</w:t></w:r><w:r><w:pict>'
+                '<v:shape id="ReportConfidentialDraft"><v:textpath string="CONFIDENTIAL DRAFT"/></v:shape>'
+                '<v:shape id="Logo"><v:textpath string="Logo"/></v:shape>'
+                '</w:pict></w:r></w:p></w:ftr>'
+            )
+            with ZipFile(source, "w") as document:
+                document.writestr("word/footer1.xml", footer)
+                document.writestr("word/document.xml", b"Edited Word report body")
+                document.writestr("word/media/figure.png", b"Edited figure")
+            original = source.read_bytes()
+            result = subprocess.run(HELPER + ["--publication-word-copy", str(source), str(destination)],
+                                    timeout=60, capture_output=True, check=True)
+            self.assertTrue(json.loads(result.stdout)["ok"])
+            self.assertEqual(source.read_bytes(), original)
+            with ZipFile(destination) as document:
+                adjusted = document.read("word/footer1.xml")
+                self.assertNotIn(b"CONFIDENTIAL DRAFT", adjusted)
+                self.assertIn(b"Edited footer text", adjusted)
+                self.assertIn(b'id="Logo"', adjusted)
+                self.assertEqual(document.read("word/document.xml"), b"Edited Word report body")
+                self.assertEqual(document.read("word/media/figure.png"), b"Edited figure")
+
+
 if __name__ == "__main__":
     if "--helper" in sys.argv:
         index = sys.argv.index("--helper")

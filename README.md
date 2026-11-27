@@ -54,6 +54,10 @@ Run Word’s Accessibility Checker and arrange review of the exact final public 
 
 The app uses desktop Microsoft Word to export a tagged PDF with heading bookmarks, carries over the document title, sets it to display in Acrobat, adds the PDF/UA-1 identifier, and fills missing link descriptions where it can identify the link. When a link needs a description, the app lists the affected PDF pages for the reviewer. Preparation runs on the PC and requires desktop Word. The reviewer uses Acrobat Pro. This workflow requires neither Java nor veraPDF.
 
+### Prepare the publication copy
+
+When the edits are complete, choose **File → Prepare PDF for publication** and select the finished Word file. The writer makes a clean PDF by removing its **CONFIDENTIAL DRAFT** watermark from a temporary Word copy. It preserves the original Word draft and any Word edits. **Prepare PDF for review** keeps the watermark if the selected Word draft has it. Run the final accessibility and publication checks on the exact clean PDF.
+
 ## Build from source
 
 Build dependencies: Go 1.22 or later, the Windows .NET Framework C# compiler, and **Python 3.11** with standard `msilib`. The build freezes the PDF helper and packages it with the app. A separate Python installation is unnecessary on the review PC. Python 3.13+ removed `msilib` and cannot run these packaging scripts.
